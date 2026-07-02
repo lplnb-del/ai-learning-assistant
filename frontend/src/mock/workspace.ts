@@ -44,6 +44,7 @@ export const viewTitles: Record<MainView, string> = {
   knowledge: '知识库管理',
   cards: 'QA 记忆卡片',
   history: '问答历史',
+  settings: '偏好设置',
 }
 
 export const chatMessages: MessageBlock[] = [

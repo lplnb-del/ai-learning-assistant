@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 
-export type MainView = 'workspace' | 'knowledge' | 'cards' | 'history'
+export type MainView = 'workspace' | 'knowledge' | 'cards' | 'history' | 'settings'
 export type WorkMode = 'chat' | 'rag' | 'agent'
 
 export interface NavItem {

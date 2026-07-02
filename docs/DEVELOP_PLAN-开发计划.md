@@ -1,4 +1,4 @@
-# DEVELOP PLAN：全能学习助理开发计划
+﻿# DEVELOP PLAN：全能学习助理开发计划
 
 ## 1. 当前状态
 
@@ -327,6 +327,15 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - [ ] Agent 页面展示计划、执行过程、工具调用、观察结果和最终汇总。
 
 ## 17. Milestone 10：工程化与简历交付
+
+## 17b. 模型设置页（Settings）
+
+- [x] 后端：Model Factory 支持 DeepSeek / OpenAI / Ollama 多 provider。
+- [x] 后端：Settings API（GET/PUT 配置 + POST 自动检测模型）。
+- [x] 前端：设置页面 UI（对话模型 + 嵌入模型独立配置）。
+- [x] 前端：自动检测本地 Ollama 模型 + 云端模型列表。
+- [x] 设置页面集成到侧边栏导航。
+- [x] 运行时模型配置存储（内存级 MVP）。
 
 目标：让项目可复现、可演示、可写进简历。
 

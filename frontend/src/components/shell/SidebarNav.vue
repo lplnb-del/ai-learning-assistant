@@ -61,7 +61,7 @@ const resourceItems = computed(() => props.items.filter((item) => item.group ===
 
     <div class="sidebar-footer">
       <div class="footer-actions">
-        <button class="nav-item footer-settings" type="button">
+        <button class="nav-item footer-settings" type="button" @click="emit('selectView', 'settings')">
           <SlidersHorizontal :size="18" aria-hidden="true" />
           <span>偏好设置</span>
         </button>

@@ -1,4 +1,4 @@
-# DESIGN：全能学习助理系统架构
+﻿# DESIGN：全能学习助理系统架构
 
 ## 1. Architecture Goals
 

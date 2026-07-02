@@ -5,7 +5,12 @@ description = "AI knowledge workbench for Chat, RAG, and Agent learning workflow
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "chromadb>=1.5.9",
     "fastapi>=0.138.2",
+    "langchain-community>=0.4.2",
+    "langchain-openai>=1.3.3",
+    "langchain-ollama>=0.3.0",
+    "langchain-text-splitters>=1.1.2",
     "pypdf>=6.14.2",
     "uvicorn[standard]>=0.49.0",
 ]

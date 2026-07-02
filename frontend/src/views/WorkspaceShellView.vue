@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import CardsView from '../components/cards/CardsView.vue'
+import SettingsView from '../components/settings/SettingsView.vue'
 import HistoryView from '../components/history/HistoryView.vue'
 import KnowledgeView from '../components/knowledge/KnowledgeView.vue'
 import AppShell from '../components/shell/AppShell.vue'
@@ -38,6 +39,7 @@ function selectMode(mode: WorkMode) {
 
     <KnowledgeView v-else-if="activeView === 'knowledge'" />
     <CardsView v-else-if="activeView === 'cards'" />
+    <SettingsView v-else-if="activeView === 'settings'" />
     <HistoryView v-else />
   </AppShell>
 </template>

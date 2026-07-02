@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ai_study_agent.api.errors import register_exception_handlers
-from ai_study_agent.api.routers import agents, cards, chat, health, knowledge, rag
+from ai_study_agent.api.routers import agents, cards, chat, health, knowledge, rag, settings
 
 DEFAULT_CORS_ORIGINS = (
     "http://localhost:5173",
@@ -36,6 +36,7 @@ def create_app(cors_origins: Sequence[str] = DEFAULT_CORS_ORIGINS) -> FastAPI:
     app.include_router(rag.router, prefix="/api")
     app.include_router(cards.router, prefix="/api")
     app.include_router(agents.router, prefix="/api")
+    app.include_router(settings.router, prefix="/api")
     return app
 
 
