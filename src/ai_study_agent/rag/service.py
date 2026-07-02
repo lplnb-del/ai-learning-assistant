@@ -9,9 +9,9 @@ from ai_study_agent.cards.repository import CardRepository
 from ai_study_agent.core.config import AppConfig
 from ai_study_agent.core.domain import QACard, QALibrary, RetrievedChunk
 from ai_study_agent.knowledge.repository import KnowledgeRepository
-from ai_study_agent.rag.embedding import EmbeddingProvider, HashingEmbeddingProvider, cosine_similarity
+from ai_study_agent.rag.embedding import EmbeddingProvider, HashingEmbeddingProvider, LangChainEmbeddingProvider, cosine_similarity
 from ai_study_agent.storage.sqlite import connect, initialize_database
-from ai_study_agent.storage.vector_index import LocalVectorIndex
+from ai_study_agent.storage.vector_index import ChromaVectorStore, LocalVectorIndex
 
 
 class RagServiceError(ValueError):
@@ -43,19 +43,39 @@ class RagService:
         self,
         repository: KnowledgeRepository,
         card_repository: CardRepository,
-        vector_index: LocalVectorIndex,
+        vector_store: ChromaVectorStore | None = None,
+        local_vector_index: LocalVectorIndex | None = None,
         embedding_provider: EmbeddingProvider | None = None,
     ) -> None:
         self._repository = repository
         self._card_repository = card_repository
-        self._vector_index = vector_index
+        self._chroma = vector_store
+        self._vector_index = local_vector_index or LocalVectorIndex("data/vector_index")
         self._embedding_provider = embedding_provider or HashingEmbeddingProvider()
 
     @classmethod
     def from_config(cls, config: AppConfig) -> "RagService":
         connection = connect(config.db_path)
         initialize_database(connection)
-        return cls(KnowledgeRepository(connection), CardRepository(connection), LocalVectorIndex(config.chroma_dir))
+        knowledge_repo = KnowledgeRepository(connection)
+        card_repo = CardRepository(connection)
+
+        embedding_provider: EmbeddingProvider | None = None
+        chroma_store: ChromaVectorStore | None = None
+        if config.has_llm_key and config.embedding_model:
+            try:
+                embedding_provider = LangChainEmbeddingProvider(
+                    api_key=config.deepseek_api_key,
+                    base_url=config.deepseek_base_url,
+                    model=config.embedding_model,
+                )
+                chroma_store = ChromaVectorStore(config.chroma_dir, embedding_provider)
+            except Exception:
+                embedding_provider = None
+                chroma_store = None
+
+        local_index = LocalVectorIndex(config.chroma_dir)
+        return cls(knowledge_repo, card_repo, chroma_store, local_index, embedding_provider)
 
     def answer_question(
         self,
@@ -84,6 +104,18 @@ class RagService:
         for kb_id in cleaned_kb_ids:
             if self._repository.count_chunks(kb_id) == 0:
                 continue
+            # Try Chroma first
+            if self._chroma:
+                try:
+                    chroma_results = self._chroma.search(kb_id, query_embedding, top_k)
+                    if chroma_results:
+                        all_sources.extend(chroma_results)
+                        if "chroma" not in retrieval_mode_parts:
+                            retrieval_mode_parts.append("chroma")
+                        continue
+                except Exception:
+                    pass
+            # Fallback to local vector index
             kb_sources = self._vector_index.search(kb_id, query_embedding, top_k)
             if kb_sources:
                 all_sources.extend(kb_sources)

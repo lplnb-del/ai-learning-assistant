@@ -1,4 +1,8 @@
-"""Embedding providers for RAG retrieval."""
+"""Embedding providers for RAG retrieval.
+
+Primary: LangChain OpenAI Embeddings (requires OPENAI_API_KEY or compatible endpoint).
+Fallback: Local hashing embedding (no external dependency).
+"""
 
 from __future__ import annotations
 
@@ -13,6 +17,29 @@ class EmbeddingProvider(Protocol):
 
     def embed(self, text: str) -> list[float]:
         """Return a deterministic embedding vector for text."""
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        """Return embedding vectors for a batch of texts."""
+
+
+class LangChainEmbeddingProvider:
+    """LangChain-based embedding provider using OpenAI-compatible API."""
+
+    name = "langchain_openai_embedding"
+
+    def __init__(self, api_key: str, base_url: str | None = None, model: str = "text-embedding-v3") -> None:
+        from langchain_openai import OpenAIEmbeddings
+
+        kwargs: dict = {"openai_api_key": api_key, "model": model}
+        if base_url:
+            kwargs["openai_api_base"] = base_url
+        self._embeddings = OpenAIEmbeddings(**kwargs)
+
+    def embed(self, text: str) -> list[float]:
+        return self._embeddings.embed_query(text)
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        return self._embeddings.embed_documents(texts)
 
 
 class HashingEmbeddingProvider:
@@ -31,6 +58,9 @@ class HashingEmbeddingProvider:
             sign = 1.0 if digest[4] % 2 == 0 else -1.0
             vector[index] += sign
         return normalize_vector(vector)
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        return [self.embed(text) for text in texts]
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:

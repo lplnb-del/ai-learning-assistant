@@ -1,4 +1,8 @@
-"""Local persistent vector index used as the Chroma adapter boundary."""
+"""Chroma vector store adapter for RAG retrieval.
+
+Primary: Chroma via langchain-community (persistent, metadata filtering).
+Fallback: Local JSON vector index (no external dependency).
+"""
 
 from __future__ import annotations
 
@@ -8,7 +12,80 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ai_study_agent.core.domain import Chunk, RetrievedChunk
-from ai_study_agent.rag.embedding import cosine_similarity
+from ai_study_agent.rag.embedding import EmbeddingProvider, HashingEmbeddingProvider, cosine_similarity
+
+
+class ChromaVectorStore:
+    """Chroma-backed vector store using LangChain integration."""
+
+    def __init__(self, persist_dir: str | Path, embedding_provider: EmbeddingProvider) -> None:
+        from langchain_community.vectorstores import Chroma
+
+        self._persist_dir = Path(persist_dir)
+        self._persist_dir.mkdir(parents=True, exist_ok=True)
+        self._embedding_provider = embedding_provider
+
+        class _LangChainEmbeddingAdapter:
+            def __init__(self, provider: EmbeddingProvider):
+                self._provider = provider
+            def embed_documents(self, texts: list[str]) -> list[list[float]]:
+                return self._provider.embed_batch(texts)
+            def embed_query(self, text: str) -> list[float]:
+                return self._provider.embed(text)
+
+        self._chroma = Chroma(
+            embedding_function=_LangChainEmbeddingAdapter(embedding_provider),
+            persist_directory=str(self._persist_dir),
+        )
+
+    def add_chunks(self, knowledge_base_id: str, chunks: list[Chunk], document_name: str, embeddings: list[list[float]]) -> None:
+        texts = [chunk.text for chunk in chunks]
+        metadatas = [
+            {
+                "knowledge_base_id": knowledge_base_id,
+                "chunk_id": chunk.id,
+                "source_document_id": chunk.source_document_id,
+                "document_name": document_name,
+                "chunk_index": str(chunk.index),
+                "title": chunk.title or "",
+            }
+            for chunk in chunks
+        ]
+        ids = [f"{knowledge_base_id}_{chunk.id}" for chunk in chunks]
+        self._chroma.add_texts(texts=texts, metadatas=metadatas, ids=ids, embeddings=embeddings)
+
+    def search(self, knowledge_base_id: str, query_embedding: list[float], top_k: int) -> list[RetrievedChunk]:
+        results = self._chroma.similarity_search_by_vector_with_relevance_scores(
+            embedding=query_embedding,
+            k=top_k,
+            filter={"knowledge_base_id": knowledge_base_id},
+        )
+        retrieved: list[RetrievedChunk] = []
+        for doc, score in results:
+            meta = doc.metadata
+            chunk = Chunk(
+                id=meta.get("chunk_id", ""),
+                knowledge_base_id=meta.get("knowledge_base_id", ""),
+                source_document_id=meta.get("source_document_id", ""),
+                text=doc.page_content,
+                index=int(meta.get("chunk_index", 0)),
+                title=meta.get("title") or None,
+            )
+            retrieved.append(RetrievedChunk(chunk=chunk, document_name=meta.get("document_name", ""), score=round(score, 4)))
+        return retrieved
+
+    def delete_by_knowledge_base(self, knowledge_base_id: str) -> None:
+        try:
+            self._chroma.delete(where={"knowledge_base_id": knowledge_base_id})
+        except Exception:
+            pass
+
+    def count_entries(self, knowledge_base_id: str) -> int:
+        try:
+            results = self._chroma.get(where={"knowledge_base_id": knowledge_base_id})
+            return len(results.get("ids", []))
+        except Exception:
+            return 0
 
 
 @dataclass(frozen=True)
@@ -24,7 +101,7 @@ class VectorIndexEntry:
 
 
 class LocalVectorIndex:
-    """JSON-backed vector index; replace this adapter with Chroma later."""
+    """JSON-backed vector index; used as fallback when Chroma is not available."""
 
     def __init__(self, index_dir: str | Path) -> None:
         self._index_dir = Path(index_dir)

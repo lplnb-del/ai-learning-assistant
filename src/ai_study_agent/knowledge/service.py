@@ -15,9 +15,15 @@ from ai_study_agent.ingestion.text_splitter import (
 )
 from ai_study_agent.ingestion.url_loader import UrlFetchResult, UrlLoadError, fetch_url_text
 from ai_study_agent.knowledge.repository import KnowledgeRepository
-from ai_study_agent.rag.embedding import HashingEmbeddingProvider
+from ai_study_agent.rag.embedding import HashingEmbeddingProvider, LangChainEmbeddingProvider
 from ai_study_agent.storage.sqlite import connect, initialize_database
-from ai_study_agent.storage.vector_index import LocalVectorIndex, VectorIndexEntry
+from ai_study_agent.storage.vector_index import ChromaVectorStore, LocalVectorIndex, VectorIndexEntry
+
+
+def _embed_chunk(provider, chunk):
+    title = chunk.title or ""
+    text = title + "\n" + chunk.text if title else chunk.text
+    return provider.embed(text)
 
 
 class KnowledgeServiceError(ValueError):
@@ -25,16 +31,34 @@ class KnowledgeServiceError(ValueError):
 
 
 class KnowledgeService:
-    def __init__(self, repository: KnowledgeRepository, vector_index: LocalVectorIndex, url_fetcher=None) -> None:
+    def __init__(
+        self,
+        repository: KnowledgeRepository,
+        vector_index: LocalVectorIndex,
+        chroma_store: ChromaVectorStore | None = None,
+        url_fetcher=None,
+    ) -> None:
         self._repository = repository
         self._vector_index = vector_index
+        self._chroma = chroma_store
         self._url_fetcher = url_fetcher or fetch_url_text
 
     @classmethod
     def from_config(cls, config: AppConfig) -> "KnowledgeService":
         connection = connect(config.db_path)
         initialize_database(connection)
-        return cls(KnowledgeRepository(connection), LocalVectorIndex(config.chroma_dir))
+        chroma_store: ChromaVectorStore | None = None
+        if config.has_llm_key and config.embedding_model:
+            try:
+                embedding_provider = LangChainEmbeddingProvider(
+                    api_key=config.deepseek_api_key,
+                    base_url=config.deepseek_base_url,
+                    model=config.embedding_model,
+                )
+                chroma_store = ChromaVectorStore(config.chroma_dir, embedding_provider)
+            except Exception:
+                chroma_store = None
+        return cls(KnowledgeRepository(connection), LocalVectorIndex(config.chroma_dir), chroma_store)
 
     def create_knowledge_base(self, name: str, description: str = "") -> KnowledgeBase:
         cleaned_name = name.strip()
@@ -46,6 +70,11 @@ class KnowledgeService:
         return self._repository.list_knowledge_bases()
 
     def delete_knowledge_base(self, knowledge_base_id: str) -> None:
+        if self._chroma:
+            try:
+                self._chroma.delete_by_knowledge_base(knowledge_base_id)
+            except Exception:
+                pass
         deleted = self._repository.delete_knowledge_base(knowledge_base_id)
         if not deleted:
             raise KnowledgeServiceError("知识库不存在")
@@ -215,18 +244,36 @@ class KnowledgeService:
                 chunk_index=item.chunk.index,
                 title=item.chunk.title,
                 text=item.chunk.text,
-                embedding=embedding_provider.embed(f"{item.chunk.title or ''}\n{item.chunk.text}"),
+                embedding=_embed_chunk(embedding_provider, item.chunk),
             )
             for item in self._repository.list_chunks_for_knowledge_base(knowledge_base_id)
         ]
+        # Write to local JSON index (always)
         self._vector_index.rebuild(knowledge_base_id, entries)
+
+        # Write to Chroma when available
+        chroma_status = ""
+        if self._chroma:
+            try:
+                from ai_study_agent.core.domain import Chunk as _Chunk
+                all_chunks = self._repository.list_chunks_for_knowledge_base(knowledge_base_id)
+                for item in all_chunks:
+                    self._chroma.add_chunks(
+                        knowledge_base_id=knowledge_base_id,
+                        chunks=[item.chunk],
+                        document_name=item.document_name,
+                        embeddings=[_embed_chunk(embedding_provider, item.chunk)],
+                    )
+                chroma_status = " + Chroma"
+            except Exception:
+                chroma_status = " (Chroma 写入失败，已保留本地索引)"
 
         return KnowledgeIndexBuild(
             knowledge_base_id=knowledge_base_id,
             document_count=len(documents),
             chunk_count=len(entries),
             status="indexed",
-            message="已写入本地持久化向量索引，后续可替换为 Chroma",
+            message=f"已写入向量索引{chroma_status}",
         )
 
     def delete_document(self, document_id: str) -> None:
