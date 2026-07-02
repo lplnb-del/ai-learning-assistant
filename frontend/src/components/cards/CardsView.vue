@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CardsCreatePanel from './CardsCreatePanel.vue'
+import CardsGeneratePanel from './CardsGeneratePanel.vue'
 import CardsLibrarySidebar from './CardsLibrarySidebar.vue'
 import CardsReviewStage from './CardsReviewStage.vue'
 import { useCardsManager } from '../../composables/useCardsManager'
@@ -49,19 +50,43 @@ const cards = useCardsManager()
       @set-mastery="cards.setMastery"
     />
 
-    <CardsCreatePanel
-      :selected-library="cards.selectedLibrary.value"
-      :question-draft="cards.questionDraft.value"
-      :answer-draft="cards.answerDraft.value"
-      :tags-draft="cards.tagsDraft.value"
-      :card-knowledge-base-id-draft="cards.cardKnowledgeBaseIdDraft.value"
-      :knowledge-bases="cards.knowledgeBases.value"
-      :can-create-card="cards.canCreateCard.value"
-      @update-question-draft="cards.questionDraft.value = $event"
-      @update-answer-draft="cards.answerDraft.value = $event"
-      @update-tags-draft="cards.tagsDraft.value = $event"
-      @update-card-knowledge-base-id-draft="cards.cardKnowledgeBaseIdDraft.value = $event"
-      @create-manual-card="cards.createManualCard"
-    />
+    <div class="cards-side-panels">
+      <CardsCreatePanel
+        :selected-library="cards.selectedLibrary.value"
+        :question-draft="cards.questionDraft.value"
+        :answer-draft="cards.answerDraft.value"
+        :tags-draft="cards.tagsDraft.value"
+        :card-knowledge-base-id-draft="cards.cardKnowledgeBaseIdDraft.value"
+        :knowledge-bases="cards.knowledgeBases.value"
+        :can-create-card="cards.canCreateCard.value"
+        @update-question-draft="cards.questionDraft.value = $event"
+        @update-answer-draft="cards.answerDraft.value = $event"
+        @update-tags-draft="cards.tagsDraft.value = $event"
+        @update-card-knowledge-base-id-draft="cards.cardKnowledgeBaseIdDraft.value = $event"
+        @create-manual-card="cards.createManualCard"
+      />
+      <CardsGeneratePanel
+        :knowledge-bases="cards.knowledgeBases.value"
+        :available-documents="cards.availableDocuments.value"
+        :available-chunks="cards.availableChunks.value"
+        :selected-chunk-ids="cards.selectedChunkIds.value"
+        :generate-knowledge-base-id="cards.generateKnowledgeBaseId.value"
+        :generate-document-id="cards.generateDocumentId.value"
+        :generate-tags-draft="cards.generateTagsDraft.value"
+        :is-generating="cards.isGenerating.value"
+        :can-generate-from-document="cards.canGenerateFromDocument.value"
+        :can-generate-from-chunks="cards.canGenerateFromChunks.value"
+        @update-generate-knowledge-base-id="cards.generateKnowledgeBaseId.value = $event"
+        @update-generate-document-id="cards.generateDocumentId.value = $event"
+        @update-generate-tags-draft="cards.generateTagsDraft.value = $event"
+        @load-documents="cards.loadDocuments"
+        @load-chunks="cards.loadChunks"
+        @toggle-chunk-selection="cards.toggleChunkSelection"
+        @select-all-chunks="cards.selectAllChunks"
+        @clear-chunk-selection="cards.clearChunkSelection"
+        @generate-from-document="cards.generateFromDocument"
+        @generate-from-chunks="cards.generateFromChunks"
+      />
+    </div>
   </section>
 </template>

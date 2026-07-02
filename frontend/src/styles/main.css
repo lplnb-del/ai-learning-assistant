@@ -2263,3 +2263,145 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+/* Cards generate panel */
+.cards-side-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cards-generate-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cards-generate-panel header {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.card-generate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chunk-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chunk-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chunk-selector-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.chunk-action-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.chunk-action-btn:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.chunk-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chunk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.chunk-item:hover {
+  background: var(--surface-hover);
+}
+
+.chunk-item-selected {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.chunk-title {
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.chunk-preview {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cards-generate-panel footer {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.cards-generate-panel footer button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cards-generate-panel footer button:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+}
+
+.cards-generate-panel footer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

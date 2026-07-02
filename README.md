@@ -119,6 +119,8 @@ Knowledge 当前支持：
 - `GET /api/cards`：按问答库、知识库、掌握程度或标签筛选卡片。
 - `PATCH /api/cards/{card_id}/mastery`：更新卡片掌握程度。
 - `DELETE /api/cards/{card_id}`：删除卡片。
+- `POST /api/cards/generate-from-chunks`：从指定 chunks 批量生成候选问答卡片。
+- `POST /api/cards/generate-from-document`：从指定文档的所有 chunks 批量生成候选问答卡片。
 
 ## 配置原则
 

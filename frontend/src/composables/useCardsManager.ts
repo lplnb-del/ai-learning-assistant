@@ -4,6 +4,8 @@ import {
   createQaLibrary,
   deleteQaCard,
   deleteQaLibrary,
+  generateCardsFromChunks,
+  generateCardsFromDocument,
   listQaCards,
   listQaLibraries,
   updateQaCardMastery,
@@ -11,7 +13,7 @@ import {
   type QACardPayload,
   type QALibraryPayload,
 } from '../api/cards'
-import { listKnowledgeBases, type KnowledgeBasePayload } from '../api/knowledge'
+import { listKnowledgeBases, listKnowledgeDocuments, listDocumentChunks, type KnowledgeBasePayload, type SourceDocumentPayload, type ChunkPayload } from '../api/knowledge'
 
 const defaultQuestion = 'RAG 和普通 Chat 的区别是什么？'
 const defaultAnswer = 'RAG 会先检索知识库资料，并基于来源片段组织回答；普通 Chat 不绑定指定知识库。'
@@ -26,6 +28,14 @@ export function useCardsManager() {
   const selectedKnowledgeBaseId = shallowRef('')
   const selectedMastery = shallowRef<MasteryLevel | ''>('')
   const tagFilter = shallowRef('')
+
+  const generateKnowledgeBaseId = shallowRef('')
+  const generateDocumentId = shallowRef('')
+  const generateTagsDraft = shallowRef('')
+  const isGenerating = shallowRef(false)
+  const availableDocuments = ref<SourceDocumentPayload[]>([])
+  const availableChunks = ref<ChunkPayload[]>([])
+  const selectedChunkIds = ref<string[]>([])
 
   const isLoading = shallowRef(false)
   const isSaving = shallowRef(false)
@@ -47,6 +57,19 @@ export function useCardsManager() {
     return index >= 0 ? index + 1 : 0
   })
   const canCreateLibrary = computed(() => libraryNameDraft.value.trim().length > 0 && !isSaving.value)
+  const canGenerateFromDocument = computed(
+    () =>
+      Boolean(selectedLibraryId.value) &&
+      Boolean(generateDocumentId.value) &&
+      !isGenerating.value,
+  )
+  const canGenerateFromChunks = computed(
+    () =>
+      Boolean(selectedLibraryId.value) &&
+      selectedChunkIds.value.length > 0 &&
+      !isGenerating.value,
+  )
+
   const canCreateCard = computed(
     () =>
       Boolean(selectedLibraryId.value) &&
@@ -228,6 +251,105 @@ export function useCardsManager() {
     }
   }
 
+  async function loadDocuments() {
+    if (!generateKnowledgeBaseId.value) {
+      availableDocuments.value = []
+      availableChunks.value = []
+      generateDocumentId.value = ''
+      selectedChunkIds.value = []
+      return
+    }
+    try {
+      availableDocuments.value = await listKnowledgeDocuments(generateKnowledgeBaseId.value)
+      generateDocumentId.value = availableDocuments.value[0]?.id ?? ''
+      await loadChunks()
+    } catch {
+      availableDocuments.value = []
+    }
+  }
+
+  async function loadChunks() {
+    if (!generateDocumentId.value) {
+      availableChunks.value = []
+      selectedChunkIds.value = []
+      return
+    }
+    try {
+      availableChunks.value = await listDocumentChunks(generateDocumentId.value)
+      selectedChunkIds.value = []
+    } catch {
+      availableChunks.value = []
+    }
+  }
+
+  function toggleChunkSelection(chunkId: string) {
+    const index = selectedChunkIds.value.indexOf(chunkId)
+    if (index >= 0) {
+      selectedChunkIds.value = selectedChunkIds.value.filter((id) => id !== chunkId)
+    } else {
+      selectedChunkIds.value = [...selectedChunkIds.value, chunkId]
+    }
+  }
+
+  function selectAllChunks() {
+    selectedChunkIds.value = availableChunks.value.map((chunk) => chunk.id)
+  }
+
+  function clearChunkSelection() {
+    selectedChunkIds.value = []
+  }
+
+  async function generateFromDocument() {
+    if (!canGenerateFromDocument.value) {
+      return
+    }
+    isGenerating.value = true
+    errorMessage.value = ''
+    successMessage.value = ''
+    try {
+      const result = await generateCardsFromDocument({
+        qa_library_id: selectedLibraryId.value,
+        document_id: generateDocumentId.value,
+        tags: generateTagsDraft.value
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+      })
+      successMessage.value = `已从文档生成 ${result.generated_count} 张候选卡片`
+      await refreshCards()
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : '生成卡片失败'
+    } finally {
+      isGenerating.value = false
+    }
+  }
+
+  async function generateFromChunks() {
+    if (!canGenerateFromChunks.value) {
+      return
+    }
+    isGenerating.value = true
+    errorMessage.value = ''
+    successMessage.value = ''
+    try {
+      const result = await generateCardsFromChunks({
+        qa_library_id: selectedLibraryId.value,
+        chunk_ids: selectedChunkIds.value,
+        knowledge_base_id: generateKnowledgeBaseId.value || undefined,
+        tags: generateTagsDraft.value
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+      })
+      successMessage.value = `已从选中的切片生成 ${result.generated_count} 张候选卡片`
+      await refreshCards()
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : '生成卡片失败'
+    } finally {
+      isGenerating.value = false
+    }
+  }
+
   return {
     cards: readonly(cards),
     qaLibraries: readonly(qaLibraries),
@@ -262,6 +384,23 @@ export function useCardsManager() {
     removeSelectedCard,
     selectCard,
     toggleFlip,
+      // Generation
+    generateKnowledgeBaseId,
+    generateDocumentId,
+    generateTagsDraft,
+    isGenerating,
+    availableDocuments,
+    availableChunks,
+    selectedChunkIds,
+    canGenerateFromDocument,
+    canGenerateFromChunks,
+    loadDocuments,
+    loadChunks,
+    toggleChunkSelection,
+    selectAllChunks,
+    clearChunkSelection,
+    generateFromDocument,
+    generateFromChunks,
   }
 }
 

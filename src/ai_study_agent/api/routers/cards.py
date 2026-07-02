@@ -7,6 +7,9 @@ from starlette import status
 
 from ai_study_agent.api.errors import ApiError
 from ai_study_agent.api.schemas.cards import (
+    CardGenerateFromChunksRequest,
+    CardGenerateFromDocumentRequest,
+    CardGenerateResponse,
     QACardCreateRequest,
     QACardMasteryUpdateRequest,
     QACardResponse,
@@ -106,6 +109,41 @@ def delete_card(card_id: str) -> None:
         service.delete_card(card_id)
     except CardServiceError as exc:
         raise ApiError("cards_error", str(exc), status_code=status.HTTP_404_NOT_FOUND) from exc
+
+
+@router.post("/generate-from-chunks", response_model=CardGenerateResponse, status_code=status.HTTP_201_CREATED)
+def generate_cards_from_chunks(request: CardGenerateFromChunksRequest) -> CardGenerateResponse:
+    service = build_service()
+    try:
+        cards = service.generate_cards_from_chunks(
+            qa_library_id=request.qa_library_id,
+            chunk_ids=request.chunk_ids,
+            knowledge_base_id=request.knowledge_base_id,
+            tags=request.tags,
+        )
+    except CardServiceError as exc:
+        raise ApiError("cards_error", str(exc), status_code=status.HTTP_400_BAD_REQUEST) from exc
+    return CardGenerateResponse(
+        generated_count=len(cards),
+        cards=[_card_response(card) for card in cards],
+    )
+
+
+@router.post("/generate-from-document", response_model=CardGenerateResponse, status_code=status.HTTP_201_CREATED)
+def generate_cards_from_document(request: CardGenerateFromDocumentRequest) -> CardGenerateResponse:
+    service = build_service()
+    try:
+        cards = service.generate_cards_from_document(
+            qa_library_id=request.qa_library_id,
+            document_id=request.document_id,
+            tags=request.tags,
+        )
+    except CardServiceError as exc:
+        raise ApiError("cards_error", str(exc), status_code=status.HTTP_400_BAD_REQUEST) from exc
+    return CardGenerateResponse(
+        generated_count=len(cards),
+        cards=[_card_response(card) for card in cards],
+    )
 
 
 def build_service() -> CardService:

@@ -87,3 +87,117 @@ def test_cards_api_rejects_unknown_library(monkeypatch, tmp_path):
     assert response.status_code == 400
     assert response.json()["code"] == "cards_error"
     assert "问答库不存在" in response.json()["message"]
+
+
+def test_cards_api_generates_from_document(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "cards.sqlite3"))
+    client = TestClient(create_app())
+    knowledge_base = client.post("/api/knowledge/bases", json={"name": "RAG 资料库"}).json()
+    import_result = client.post(
+        f"/api/knowledge/bases/{knowledge_base['id']}/documents/import-text",
+        json={
+            "name": "rag-intro.md",
+            "content_type": "text/markdown",
+            "content": "# RAG 入门\n\nRAG 会先检索资料，再把命中的上下文交给大模型组织答案。\n\n## 核心流程\n\n1. 用户提问\n2. 检索相关 chunks\n3. 组装 prompt\n4. 调用 LLM 生成回答",
+            "chunk_size": 200,
+            "chunk_overlap": 40,
+        },
+    )
+    assert import_result.status_code == 201
+    document = import_result.json()["document"]
+
+    library = client.post("/api/cards/libraries", json={"name": "RAG 问答库"}).json()
+
+    response = client.post(
+        "/api/cards/generate-from-document",
+        json={
+            "qa_library_id": library["id"],
+            "document_id": document["id"],
+            "tags": ["RAG", "自动生成"],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["generated_count"] >= 1
+    assert len(payload["cards"]) == payload["generated_count"]
+    for card in payload["cards"]:
+        assert card["qa_library_id"] == library["id"]
+        assert card["knowledge_base_id"] == knowledge_base["id"]
+        assert "RAG" in card["tags"]
+        assert "自动生成" in card["tags"]
+        assert card["mastery"] == "new"
+        assert len(card["question"]) > 0
+        assert len(card["answer"]) > 0
+
+
+def test_cards_api_generates_from_chunks(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "cards.sqlite3"))
+    client = TestClient(create_app())
+    knowledge_base = client.post("/api/knowledge/bases", json={"name": "RAG 资料库"}).json()
+    import_result = client.post(
+        f"/api/knowledge/bases/{knowledge_base['id']}/documents/import-text",
+        json={
+            "name": "rag-intro.md",
+            "content_type": "text/markdown",
+            "content": "# RAG 入门\n\nRAG 会先检索资料，再把命中的上下文交给大模型组织答案。\n\n## 核心流程\n\n1. 用户提问\n2. 检索相关 chunks\n3. 组装 prompt\n4. 调用 LLM 生成回答",
+            "chunk_size": 200,
+            "chunk_overlap": 40,
+        },
+    )
+    assert import_result.status_code == 201
+    chunks = import_result.json()["chunks"]
+    chunk_ids = [chunk["id"] for chunk in chunks[:2]]
+
+    library = client.post("/api/cards/libraries", json={"name": "RAG 问答库"}).json()
+
+    response = client.post(
+        "/api/cards/generate-from-chunks",
+        json={
+            "qa_library_id": library["id"],
+            "chunk_ids": chunk_ids,
+            "knowledge_base_id": knowledge_base["id"],
+            "tags": ["选中生成"],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["generated_count"] >= 1
+    assert len(payload["cards"]) == payload["generated_count"]
+    for card in payload["cards"]:
+        assert card["qa_library_id"] == library["id"]
+        assert "选中生成" in card["tags"]
+
+
+def test_cards_api_rejects_empty_chunk_ids(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "cards.sqlite3"))
+    client = TestClient(create_app())
+    library = client.post("/api/cards/libraries", json={"name": "测试问答库"}).json()
+
+    response = client.post(
+        "/api/cards/generate-from-chunks",
+        json={
+            "qa_library_id": library["id"],
+            "chunk_ids": [],
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_cards_api_rejects_unknown_document(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "cards.sqlite3"))
+    client = TestClient(create_app())
+    library = client.post("/api/cards/libraries", json={"name": "测试问答库"}).json()
+
+    response = client.post(
+        "/api/cards/generate-from-document",
+        json={
+            "qa_library_id": library["id"],
+            "document_id": "nonexistent-doc-id",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "文档" in response.json()["message"]

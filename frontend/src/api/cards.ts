@@ -122,3 +122,37 @@ async function readApiError(response: Response): Promise<string> {
     return `请求失败：HTTP ${response.status}`
   }
 }
+
+export interface CardGenerateFromChunksPayload {
+  qa_library_id: string
+  chunk_ids: string[]
+  knowledge_base_id?: string | null
+  tags?: string[]
+}
+
+export interface CardGenerateFromDocumentPayload {
+  qa_library_id: string
+  document_id: string
+  tags?: string[]
+}
+
+export interface CardGenerateResponsePayload {
+  generated_count: number
+  cards: QACardPayload[]
+}
+
+export async function generateCardsFromChunks(payload: CardGenerateFromChunksPayload): Promise<CardGenerateResponsePayload> {
+  return requestJson('/api/cards/generate-from-chunks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function generateCardsFromDocument(payload: CardGenerateFromDocumentPayload): Promise<CardGenerateResponsePayload> {
+  return requestJson('/api/cards/generate-from-document', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}

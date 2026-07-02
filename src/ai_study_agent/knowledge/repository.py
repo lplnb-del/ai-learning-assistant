@@ -207,6 +207,22 @@ class KnowledgeRepository:
         ).fetchall()
         return [_chunk_from_row(row) for row in rows]
 
+    def list_chunks_by_ids(self, chunk_ids: list[str]) -> list[Chunk]:
+        if not chunk_ids:
+            return []
+        placeholders = ','.join('?' for _ in chunk_ids)
+        rows = self._connection.execute(
+            f"""
+            SELECT id, knowledge_base_id, source_document_id, chunk_index,
+                   title, text, metadata_json
+            FROM document_chunks
+            WHERE id IN ({placeholders})
+            ORDER BY chunk_index
+            """,
+            chunk_ids,
+        ).fetchall()
+        return [_chunk_from_row(row) for row in rows]
+
 
 def _knowledge_base_from_row(row: sqlite3.Row) -> KnowledgeBase:
     return KnowledgeBase(

@@ -46,3 +46,20 @@ class QACardResponse(BaseModel):
     mastery: MasteryLevel
     created_at: datetime
     updated_at: datetime
+
+class CardGenerateFromChunksRequest(BaseModel):
+    qa_library_id: str = Field(min_length=1, max_length=120)
+    chunk_ids: list[str] = Field(min_length=1, max_length=50)
+    knowledge_base_id: str | None = Field(default=None, max_length=120)
+    tags: list[str] = Field(default_factory=list, max_length=12)
+
+
+class CardGenerateFromDocumentRequest(BaseModel):
+    qa_library_id: str = Field(min_length=1, max_length=120)
+    document_id: str = Field(min_length=1, max_length=120)
+    tags: list[str] = Field(default_factory=list, max_length=12)
+
+
+class CardGenerateResponse(BaseModel):
+    generated_count: int
+    cards: list[QACardResponse]
