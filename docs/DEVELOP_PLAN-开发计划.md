@@ -299,12 +299,12 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 
 任务：
 
-- [ ] Capability 基础接口。
-- [ ] Capability Registry。
-- [ ] Skill Registry。
-- [ ] 基础 Skills：总结、解释、出题、生成问答卡片。
-- [ ] MCP Tool Adapter 接口桩。
-- [ ] SubAgent 基础接口。
+- [x] Capability 基础接口。
+- [x] Capability Registry。
+- [x] Skill Registry。
+- [x] 基础 Skills：总结、解释、出题、生成问答卡片。
+- [x] MCP Tool Adapter 接口桩（预留接口，未实现）。
+- [x] SubAgent 基础接口（Skills 作为第一层，SubAgent 后续接入）。
 - [ ] Education Expert SubAgent。
 - [ ] Interviewer SubAgent。
 - [ ] Quiz Coach SubAgent。
