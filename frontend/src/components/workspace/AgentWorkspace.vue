@@ -42,7 +42,25 @@ const skillIcons: Record<string, typeof Bot> = {
       </div>
     </div>
 
-    <p v-if="agent.selectedSkill.value" class="agent-skill-desc">{{ agent.selectedSkill.value.description }}</p>
+    <div class="agent-role-strip">
+      <span class="agent-role-label">角色模式</span>
+      <label class="agent-role-option" :class="{ 'agent-role-active': !agent.selectedRoleId.value }">
+        <input type="radio" name="agent-role" value="" :checked="!agent.selectedRoleId.value" @change="agent.selectedRoleId.value = ''" />
+        <span>通用</span>
+      </label>
+      <label
+        v-for="role in agent.roles.value"
+        :key="role.id"
+        class="agent-role-option"
+        :class="{ 'agent-role-active': role.id === agent.selectedRoleId.value }"
+      >
+        <input type="radio" name="agent-role" :value="role.id" :checked="role.id === agent.selectedRoleId.value" @change="agent.selectedRoleId.value = role.id" />
+        <span>{{ role.name }}</span>
+      </label>
+    </div>
+
+    <p v-if="agent.selectedRole.value" class="agent-role-greeting">{{ agent.selectedRole.value.greeting }}</p>
+    <p v-else-if="agent.selectedSkill.value" class="agent-skill-desc">{{ agent.selectedSkill.value.description }}</p>
 
     <div class="message-stream">
       <p v-if="agent.errorMessage.value" class="chat-error">

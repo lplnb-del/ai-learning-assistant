@@ -15,10 +15,21 @@ class CapabilityResponse(BaseModel):
     enabled: bool
 
 
+class SubAgentRoleResponse(BaseModel):
+    id: str
+    name: str
+    title: str
+    description: str
+    greeting: str
+    preferred_skills: list[str]
+    tags: list[str]
+
+
 class SkillRunRequest(BaseModel):
     input_text: str = Field(min_length=1, max_length=10000)
     knowledge_base_id: str | None = Field(default=None, max_length=120)
     top_k: int = Field(default=3, ge=1, le=8)
+    role_id: str | None = Field(default=None, max_length=60)
 
 
 class SkillRunResponse(BaseModel):

@@ -10,6 +10,7 @@ from ai_study_agent.api.schemas.agents import (
     CapabilityResponse,
     SkillRunRequest,
     SkillRunResponse,
+    SubAgentRoleResponse,
 )
 from ai_study_agent.api.schemas.common import RouterStatusResponse
 from ai_study_agent.agents.service import AgentService, AgentServiceError
@@ -32,6 +33,11 @@ def list_capabilities() -> list[CapabilityResponse]:
     return [_capability_response(cap) for cap in build_service().list_capabilities()]
 
 
+@router.get("/roles", response_model=list[SubAgentRoleResponse])
+def list_roles() -> list[SubAgentRoleResponse]:
+    return [_role_response(role) for role in build_service().list_roles()]
+
+
 @router.post("/skills/{skill_id}/run", response_model=SkillRunResponse, status_code=status.HTTP_200_OK)
 def run_skill(skill_id: str, request: SkillRunRequest) -> SkillRunResponse:
     service = build_service()
@@ -41,6 +47,7 @@ def run_skill(skill_id: str, request: SkillRunRequest) -> SkillRunResponse:
             input_text=request.input_text,
             knowledge_base_id=request.knowledge_base_id,
             top_k=request.top_k,
+            role_id=request.role_id,
         )
     except AgentServiceError as exc:
         raise ApiError("agent_error", str(exc), status_code=status.HTTP_400_BAD_REQUEST) from exc
@@ -55,6 +62,18 @@ def run_skill(skill_id: str, request: SkillRunRequest) -> SkillRunResponse:
 
 def build_service() -> AgentService:
     return AgentService.from_config(AppConfig.from_env())
+
+
+def _role_response(role) -> SubAgentRoleResponse:
+    return SubAgentRoleResponse(
+        id=role.id,
+        name=role.name,
+        title=role.title,
+        description=role.description,
+        greeting=role.greeting,
+        preferred_skills=role.preferred_skills,
+        tags=role.tags,
+    )
 
 
 def _capability_response(capability: Capability) -> CapabilityResponse:

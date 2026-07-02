@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ai_study_agent.agent_capabilities.registry import CapabilityRegistry, SkillDefinition
+from ai_study_agent.agent_capabilities.subagents import SubAgentRole, get_role, list_roles
 from ai_study_agent.core.config import AppConfig
 from ai_study_agent.core.domain import Message, MessageRole
 from ai_study_agent.llm.deepseek import ChatOptions, DeepSeekGateway
@@ -54,6 +55,12 @@ class AgentService:
             pass
         return cls(registry, llm, rag)
 
+    def list_roles(self) -> list[SubAgentRole]:
+        return list_roles()
+
+    def get_role(self, role_id: str) -> SubAgentRole | None:
+        return get_role(role_id)
+
     def list_capabilities(self):
         return self._registry.list_capabilities()
 
@@ -67,6 +74,7 @@ class AgentService:
         input_text: str,
         knowledge_base_id: str | None = None,
         top_k: int = 3,
+        role_id: str | None = None,
     ) -> SkillResult:
         cleaned_input = input_text.strip()
         if not cleaned_input:
@@ -95,7 +103,7 @@ class AgentService:
         if self._llm is None:
             output = self._local_execute(skill, cleaned_input, context)
         else:
-            output = self._llm_execute(skill, cleaned_input, context)
+            output = self._llm_execute(skill, cleaned_input, context, role_id)
 
         return SkillResult(
             skill_id=skill.id,
@@ -116,12 +124,19 @@ class AgentService:
         lines.append("这一步使用本地模式；配置 DeepSeek API Key 后，将使用 LLM 生成更高质量的回答。")
         return "\n".join(lines)
 
-    def _llm_execute(self, skill: SkillDefinition, input_text: str, context: str) -> str:
+    def _llm_execute(self, skill: SkillDefinition, input_text: str, context: str, role_id: str | None = None) -> str:
         user_content = input_text
         if context:
             user_content = f"参考资料：\n{context}\n\n用户输入：\n{input_text}"
+
+        system_prompt = skill.system_prompt
+        if role_id:
+            role = get_role(role_id)
+            if role:
+                system_prompt = f"{role.system_prompt}\n\n当前使用的工具：{skill.name}\n{skill.system_prompt}"
+
         messages = [
-            Message(role=MessageRole.SYSTEM, content=skill.system_prompt),
+            Message(role=MessageRole.SYSTEM, content=system_prompt),
             Message(role=MessageRole.USER, content=user_content),
         ]
         options = ChatOptions(temperature=0.7, max_tokens=2048)

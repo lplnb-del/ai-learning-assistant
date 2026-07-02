@@ -2619,3 +2619,59 @@ select:focus-visible {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Agent role strip */
+.agent-role-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.agent-role-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.agent-role-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.agent-role-option input {
+  display: none;
+}
+
+.agent-role-option:hover {
+  background: var(--surface-hover);
+}
+
+.agent-role-active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.agent-role-greeting {
+  font-size: 13px;
+  color: var(--primary);
+  padding: 8px 12px;
+  margin: 0;
+  background: var(--primary-soft);
+  border-bottom: 1px solid var(--border);
+  font-style: italic;
+}

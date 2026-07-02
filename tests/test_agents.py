@@ -115,3 +115,49 @@ def test_agents_api_runs_skill_with_knowledge_context(monkeypatch, tmp_path):
     result = response.json()
     assert result["skill_id"] == "summarize"
     assert len(result["output"]) > 0
+
+
+def test_subagent_roles_are_defined():
+    from ai_study_agent.agent_capabilities.subagents import list_roles, get_role
+
+    roles = list_roles()
+    assert len(roles) >= 4
+    ids = {role.id for role in roles}
+    assert "education_expert" in ids
+    assert "interviewer" in ids
+    assert "quiz_coach" in ids
+    assert "summary_coach" in ids
+
+    expert = get_role("education_expert")
+    assert expert is not None
+    assert expert.name == "教育专家"
+    assert len(expert.system_prompt) > 0
+    assert len(expert.greeting) > 0
+
+
+def test_agents_api_lists_roles(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "agent.sqlite3"))
+    client = TestClient(create_app())
+
+    response = client.get("/api/agents/roles")
+
+    assert response.status_code == 200
+    roles = response.json()
+    assert len(roles) >= 4
+    assert any(role["id"] == "interviewer" for role in roles)
+    assert any(role["id"] == "education_expert" for role in roles)
+
+
+def test_agents_api_runs_skill_with_role(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "agent.sqlite3"))
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/agents/skills/explain/run",
+        json={"input_text": "What is RAG?", "role_id": "education_expert"},
+    )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["skill_id"] == "explain"
+    assert len(result["output"]) > 0

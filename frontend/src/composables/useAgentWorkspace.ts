@@ -1,6 +1,8 @@
 import { computed, onMounted, ref, shallowRef } from 'vue'
 import {
   listAgentCapabilities,
+  listSubAgentRoles,
+  type SubAgentRolePayload,
   runAgentSkill,
   type AgentCapabilityPayload,
 } from '../api/agents'
@@ -16,6 +18,8 @@ export interface AgentMessage {
 }
 
 export function useAgentWorkspace() {
+  const roles = ref<SubAgentRolePayload[]>([])
+  const selectedRoleId = shallowRef('')
   const capabilities = ref<AgentCapabilityPayload[]>([])
   const knowledgeBases = ref<KnowledgeBasePayload[]>([])
   const messages = ref<AgentMessage[]>([])
@@ -25,6 +29,9 @@ export function useAgentWorkspace() {
   const isRunning = shallowRef(false)
   const errorMessage = shallowRef('')
 
+  const selectedRole = computed(
+    () => roles.value.find((role) => role.id === selectedRoleId.value) ?? null,
+  )
   const selectedSkill = computed(
     () => capabilities.value.find((cap) => cap.id === selectedSkillId.value) ?? null,
   )
@@ -38,8 +45,9 @@ export function useAgentWorkspace() {
 
   async function initialize() {
     try {
-      const [caps, bases] = await Promise.all([listAgentCapabilities(), listKnowledgeBases()])
+      const [caps, bases, roleList] = await Promise.all([listAgentCapabilities(), listKnowledgeBases(), listSubAgentRoles()])
       capabilities.value = caps
+      roles.value = roleList
       knowledgeBases.value = bases
       if (!selectedSkillId.value && caps.length) {
         selectedSkillId.value = caps[0].id
@@ -69,6 +77,7 @@ export function useAgentWorkspace() {
         input_text: question,
         knowledge_base_id: selectedKnowledgeBaseId.value || undefined,
         top_k: 3,
+        role_id: selectedRoleId.value || undefined,
       })
       const assistantMessage: AgentMessage = {
         id: crypto.randomUUID(),
@@ -87,6 +96,9 @@ export function useAgentWorkspace() {
   }
 
   return {
+    roles,
+    selectedRoleId,
+    selectedRole,
     capabilities,
     knowledgeBases,
     messages,

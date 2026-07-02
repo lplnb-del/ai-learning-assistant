@@ -1,3 +1,13 @@
+export interface SubAgentRolePayload {
+  id: string
+  name: string
+  title: string
+  description: string
+  greeting: string
+  preferred_skills: string[]
+  tags: string[]
+}
+
 export interface AgentCapabilityPayload {
   id: string
   name: string
@@ -10,6 +20,7 @@ export interface SkillRunPayload {
   input_text: string
   knowledge_base_id?: string | null
   top_k?: number
+  role_id?: string | null
 }
 
 export interface SkillRunResultPayload {
@@ -25,6 +36,10 @@ interface ApiErrorPayload {
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+
+export async function listSubAgentRoles(): Promise<SubAgentRolePayload[]> {
+  return requestJson('/api/agents/roles')
+}
 
 export async function listAgentCapabilities(): Promise<AgentCapabilityPayload[]> {
   return requestJson('/api/agents/capabilities')

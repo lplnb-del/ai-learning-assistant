@@ -305,10 +305,10 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - [x] 基础 Skills：总结、解释、出题、生成问答卡片。
 - [x] MCP Tool Adapter 接口桩（预留接口，未实现）。
 - [x] SubAgent 基础接口（Skills 作为第一层，SubAgent 后续接入）。
-- [ ] Education Expert SubAgent。
-- [ ] Interviewer SubAgent。
-- [ ] Quiz Coach SubAgent。
-- [ ] Summary Coach SubAgent。
+- [x] Education Expert SubAgent。
+- [x] Interviewer SubAgent。
+- [x] Quiz Coach SubAgent。
+- [x] Summary Coach SubAgent。
 
 ## 16. Milestone 9：Agent 模式编排
 
