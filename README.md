@@ -8,7 +8,7 @@
 
 - 前端主线：Vue 3 + Vite + TypeScript + Tailwind CSS，已完成高保真 UI 还原。
 - 后端主线：FastAPI + Python 服务层，承载 DeepSeek、RAG、Agent、知识库、文件解析和流式接口。RAG 链路全面采用 LangChain 生态：TextSplitter 切分、Chroma 向量库、LangChain Embeddings、LangChain Chat Model。
-- AI 编排：LangChain / LangGraph 放在后端渐进接入。
+- AI 编排：LangChain 放在后端；LangGraph 规划用于 Agent 多步骤编排（Milestone 9，尚未接入）。
 
 ## 核心模式
 
@@ -38,7 +38,7 @@
 - DeepSeek OpenAI-compatible API (via langchain-openai)
 - LangChain（langchain-text-splitters、langchain-openai）
 - LangChain Community（Chroma 集成）
-- LangGraph（Agent 编排）
+- LangGraph（Agent 编排，已规划未接入）
 - Chroma（向量存储）
 - SQLite（元数据存储）
 - pytest

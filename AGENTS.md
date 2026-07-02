@@ -13,7 +13,7 @@
 - 前端主线：Vue 3 + Vite + TypeScript + Tailwind CSS + Pinia + Vue Router。
 - 前端写法：Composition API + `<script setup lang="ts">`，组件使用 PascalCase，复杂状态抽到 composables / stores。
 - 后端主线：FastAPI + Python 服务层。
-- AI 编排：DeepSeek Gateway、LangChain / LangGraph、RAG、Agent Capability Layer 均放在后端。
+- AI 编排：DeepSeek Gateway、LangChain、RAG、Agent Capability Layer 均放在后端；LangGraph 规划用于 Agent 多步骤编排。
 
 ## 项目结构
 

@@ -7,7 +7,7 @@
 - 后端目标是提供 FastAPI 接口，承载 DeepSeek、RAG、Agent、知识库、存储和流式输出。
 - 已完成 Milestone 0-4：Vue 前端基线、高保真静态工作台、FastAPI 后端基线、Chat 前后端垂直闭环。
 - Milestone 5 已完成基础闭环：SQLite 元数据表、知识库创建/列表/删除确认、Markdown/TXT/PDF/URL 导入、清洗切分、chunk 预览、索引准备入口和前端 API 接入。
-- Milestone 6 已完成第一条本地检索切片：RAG 页面可选择知识库、调整 Top K、使用固定演示问题提问并展示来源片段；后端已有可替换的本地 hashing embedding provider、JSON 持久化向量索引适配层和 cosine similarity 检索；无检索结果时会给出兜底提示；后续继续把适配层替换为 Chroma 并接入模型生成。
+- Milestone 6 已完成 RAG 检索闭环：支持多知识库联合检索、Chroma 向量检索（LangChain）+ 本地 JSON fallback + 问答库混合检索、Top K、来源片段展示和问答卡片保存。当前 RAG 回答基于 prompt 组装和本地拼接，LLM 生成回答待接入。
 - Milestone 7 已升级为“问答库 + 卡片”基础闭环：后端提供 `qa_libraries`、`qa_cards` SQLite 存储、问答库创建/列表/删除、卡片创建/列表/删除、掌握程度更新和按问答库/知识库/标签/掌握程度筛选；前端 QA 卡片页接入真实 API，支持按问答库管理卡片、手动创建、点击翻牌、掌握程度标记和删除；RAG 回答可选择参考问答库，并保存到指定问答库或在保存时直接新建问答库。
 
 ## 2. 技术栈
@@ -42,7 +42,7 @@
 - Pydantic schemas
 - DeepSeek OpenAI-compatible API (via langchain-openai)
 - LangChain（langchain-text-splitters、langchain-openai、langchain-community）
-- LangGraph（Agent 多步骤编排）
+- LangGraph（Agent 多步骤编排，已规划未接入）
 - Chroma（langchain-community Chroma 集成）
 - SQLite
 - pytest

@@ -98,7 +98,7 @@ Vue 约束：
 - langchain-ollama（Ollama 本地模型集成）
 - langchain-community HuggingFaceEmbeddings（本地 sentence-transformers 嵌入）
 - LangChain（TextSplitter、Embeddings、Chat Model、RetrievalQA）
-- LangGraph（Agent 多步骤编排）
+- LangGraph（Agent 多步骤编排，已规划未接入）
 - Chroma（向量存储，LangChain 集成）
 - SQLite（元数据存储）
 - pytest
