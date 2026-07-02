@@ -10,6 +10,7 @@ from ai_study_agent.api.schemas.cards import (
     CardGenerateFromChunksRequest,
     CardGenerateFromDocumentRequest,
     CardGenerateResponse,
+    CardSourceTraceResponse,
     QACardCreateRequest,
     QACardMasteryUpdateRequest,
     QACardResponse,
@@ -19,7 +20,7 @@ from ai_study_agent.api.schemas.cards import (
 from ai_study_agent.api.schemas.common import RouterStatusResponse
 from ai_study_agent.cards.service import CardService, CardServiceError
 from ai_study_agent.core.config import AppConfig
-from ai_study_agent.core.domain import MasteryLevel, QACard, QALibrary
+from ai_study_agent.core.domain import Chunk, MasteryLevel, QACard, QALibrary
 
 router = APIRouter(prefix="/cards", tags=["cards"])
 
@@ -146,6 +147,19 @@ def generate_cards_from_document(request: CardGenerateFromDocumentRequest) -> Ca
     )
 
 
+@router.get("/{card_id}/sources", response_model=list[CardSourceTraceResponse])
+def trace_card_sources(card_id: str) -> list[CardSourceTraceResponse]:
+    service = build_service()
+    try:
+        card = service.get_card(card_id)
+    except CardServiceError as exc:
+        raise ApiError("cards_error", str(exc), status_code=status.HTTP_404_NOT_FOUND) from exc
+    if not card.source_chunk_ids:
+        return []
+    chunks = service.get_chunks_by_ids(card.source_chunk_ids)
+    return [_chunk_trace_response(chunk) for chunk in chunks]
+
+
 def build_service() -> CardService:
     return CardService.from_config(AppConfig.from_env())
 
@@ -157,6 +171,17 @@ def _library_response(library: QALibrary) -> QALibraryResponse:
         description=library.description,
         created_at=library.created_at,
         updated_at=library.updated_at,
+    )
+
+
+def _chunk_trace_response(chunk: Chunk) -> CardSourceTraceResponse:
+    return CardSourceTraceResponse(
+        chunk_id=chunk.id,
+        knowledge_base_id=chunk.knowledge_base_id,
+        source_document_id=chunk.source_document_id,
+        chunk_index=chunk.index,
+        title=chunk.title,
+        text=chunk.text,
     )
 
 

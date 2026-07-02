@@ -201,3 +201,62 @@ def test_cards_api_rejects_unknown_document(monkeypatch, tmp_path):
 
     assert response.status_code == 400
     assert "文档" in response.json()["message"]
+
+
+def test_cards_api_traces_card_sources(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "cards.sqlite3"))
+    client = TestClient(create_app())
+    knowledge_base = client.post("/api/knowledge/bases", json={"name": "RAG 资料库"}).json()
+    import_result = client.post(
+        f"/api/knowledge/bases/{knowledge_base['id']}/documents/import-text",
+        json={
+            "name": "rag-intro.md",
+            "content_type": "text/markdown",
+            "content": "# RAG 入门\n\nRAG 会先检索资料，再把命中的上下文交给大模型组织答案。\n\n## 核心流程\n\n1. 用户提问\n2. 检索相关 chunks\n3. 组装 prompt\n4. 调用 LLM 生成回答",
+            "chunk_size": 200,
+            "chunk_overlap": 40,
+        },
+    )
+    assert import_result.status_code == 201
+    chunks = import_result.json()["chunks"]
+
+    library = client.post("/api/cards/libraries", json={"name": "RAG 问答库"}).json()
+    card = client.post(
+        "/api/cards",
+        json={
+            "qa_library_id": library["id"],
+            "question": "RAG 是什么？",
+            "answer": "RAG 会先检索资料再组织回答。",
+            "knowledge_base_id": knowledge_base["id"],
+            "source_chunk_ids": [chunks[0]["id"]],
+            "tags": ["RAG"],
+        },
+    ).json()
+
+    response = client.get(f"/api/cards/{card['id']}/sources")
+
+    assert response.status_code == 200
+    sources = response.json()
+    assert len(sources) >= 1
+    assert sources[0]["chunk_id"] == chunks[0]["id"]
+    assert sources[0]["knowledge_base_id"] == knowledge_base["id"]
+    assert len(sources[0]["text"]) > 0
+
+
+def test_cards_api_returns_empty_sources_for_manual_card(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "cards.sqlite3"))
+    client = TestClient(create_app())
+    library = client.post("/api/cards/libraries", json={"name": "手动问答库"}).json()
+    card = client.post(
+        "/api/cards",
+        json={
+            "qa_library_id": library["id"],
+            "question": "手动问题",
+            "answer": "手动答案",
+        },
+    ).json()
+
+    response = client.get(f"/api/cards/{card['id']}/sources")
+
+    assert response.status_code == 200
+    assert response.json() == []

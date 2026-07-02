@@ -104,6 +104,15 @@ class CardService:
             raise CardServiceError("卡片不存在")
         return card
 
+    def get_card(self, card_id: str) -> QACard:
+        card = self._cards.get_card(card_id)
+        if card is None:
+            raise CardServiceError("卡片不存在")
+        return card
+
+    def get_chunks_by_ids(self, chunk_ids: list[str]) -> list:
+        return self._knowledge.list_chunks_by_ids(chunk_ids)
+
     def delete_card(self, card_id: str) -> None:
         if not self._cards.delete_card(card_id):
             raise CardServiceError("卡片不存在")

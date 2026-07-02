@@ -17,6 +17,9 @@ const cards = useCardsManager()
       :library-description-draft="cards.libraryDescriptionDraft.value"
       :is-loading="cards.isLoading.value"
       :is-saving="cards.isSaving.value"
+      :is-tracing="cards.isTracing.value"
+      :traced-sources="cards.tracedSources.value"
+      :show-source-panel="cards.showSourcePanel.value"
       :can-create-library="cards.canCreateLibrary.value"
       @select-library="cards.selectLibrary"
       @update-library-name-draft="cards.libraryNameDraft.value = $event"
@@ -37,6 +40,9 @@ const cards = useCardsManager()
       :card-position="cards.cardPosition.value"
       :is-flipped="cards.isFlipped.value"
       :is-saving="cards.isSaving.value"
+      :is-tracing="cards.isTracing.value"
+      :traced-sources="cards.tracedSources.value"
+      :show-source-panel="cards.showSourcePanel.value"
       :error-message="cards.errorMessage.value"
       :success-message="cards.successMessage.value"
       :knowledge-bases="cards.knowledgeBases.value"
@@ -48,6 +54,8 @@ const cards = useCardsManager()
       @toggle-flip="cards.toggleFlip"
       @remove-selected-card="cards.removeSelectedCard"
       @set-mastery="cards.setMastery"
+      @trace-sources="cards.traceSelectedCardSources"
+      @close-source-panel="cards.closeSourcePanel"
     />
 
     <div class="cards-side-panels">

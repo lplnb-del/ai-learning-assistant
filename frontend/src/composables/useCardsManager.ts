@@ -6,6 +6,8 @@ import {
   deleteQaLibrary,
   generateCardsFromChunks,
   generateCardsFromDocument,
+  traceCardSources,
+  type CardSourceTracePayload,
   listQaCards,
   listQaLibraries,
   updateQaCardMastery,
@@ -33,6 +35,9 @@ export function useCardsManager() {
   const generateDocumentId = shallowRef('')
   const generateTagsDraft = shallowRef('')
   const isGenerating = shallowRef(false)
+  const isTracing = shallowRef(false)
+  const tracedSources = ref<CardSourceTracePayload[]>([])
+  const showSourcePanel = shallowRef(false)
   const availableDocuments = ref<SourceDocumentPayload[]>([])
   const availableChunks = ref<ChunkPayload[]>([])
   const selectedChunkIds = ref<string[]>([])
@@ -350,6 +355,35 @@ export function useCardsManager() {
     }
   }
 
+  async function traceSelectedCardSources() {
+    if (!selectedCard.value) {
+      tracedSources.value = []
+      showSourcePanel.value = false
+      return
+    }
+    if (!selectedCard.value.source_chunk_ids.length) {
+      tracedSources.value = []
+      showSourcePanel.value = false
+      errorMessage.value = '当前卡片没有关联的知识库来源'
+      return
+    }
+    isTracing.value = true
+    errorMessage.value = ''
+    try {
+      tracedSources.value = await traceCardSources(selectedCard.value.id)
+      showSourcePanel.value = true
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : '追溯来源失败'
+    } finally {
+      isTracing.value = false
+    }
+  }
+
+  function closeSourcePanel() {
+    showSourcePanel.value = false
+    tracedSources.value = []
+  }
+
   return {
     cards: readonly(cards),
     qaLibraries: readonly(qaLibraries),
@@ -401,6 +435,11 @@ export function useCardsManager() {
     clearChunkSelection,
     generateFromDocument,
     generateFromChunks,
+    isTracing,
+    tracedSources,
+    showSourcePanel,
+    traceSelectedCardSources,
+    closeSourcePanel,
   }
 }
 

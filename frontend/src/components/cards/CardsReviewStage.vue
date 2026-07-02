@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertCircle, Check, Database, Layers, MousePointerClick, Trash2 } from '@lucide/vue'
+import { AlertCircle, BookOpen, Check, Database, Layers, MousePointerClick, Trash2, X } from '@lucide/vue'
 import type { QACardPayload, QALibraryPayload, MasteryLevel } from '../../api/cards'
 import type { KnowledgeBasePayload } from '../../api/knowledge'
 
@@ -14,6 +14,9 @@ const props = defineProps<{
   cardPosition: number
   isFlipped: boolean
   isSaving: boolean
+  isTracing: boolean
+  tracedSources: readonly { chunk_id: string; knowledge_base_id: string; source_document_id: string; chunk_index: number; title: string | null; text: string }[]
+  showSourcePanel: boolean
   errorMessage: string
   successMessage: string
   knowledgeBases: readonly KnowledgeBasePayload[]
@@ -28,6 +31,8 @@ const emit = defineEmits<{
   toggleFlip: []
   removeSelectedCard: []
   setMastery: [mastery: MasteryLevel]
+  traceSources: []
+  closeSourcePanel: []
 }>()
 
 function splitAnswer(answer: string): string[] {
@@ -118,6 +123,32 @@ function knowledgeBaseName(knowledgeBaseId: string | null): string {
       <div class="flashcard-back">
         <h3>参考答案</h3>
         <p v-for="line in splitAnswer(selectedCard.answer)" :key="line">{{ line }}</p>
+        <div class="flashcard-source-actions">
+          <button
+            type="button"
+            class="source-trace-btn"
+            :disabled="!selectedCard.source_chunk_ids.length || isTracing"
+            @click.stop="emit('traceSources')"
+          >
+            <BookOpen :size="14" />{{ isTracing ? '追溯中...' : '查看来源切片' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showSourcePanel && tracedSources.length" class="source-trace-panel">
+      <header>
+        <span>来源切片（{{ tracedSources.length }} 条）</span>
+        <button type="button" class="source-close-btn" @click="emit('closeSourcePanel')"><X :size="14" /></button>
+      </header>
+      <div class="source-trace-list">
+        <div v-for="source in tracedSources" :key="source.chunk_id" class="source-trace-item">
+          <div class="source-trace-header">
+            <span class="source-trace-title">{{ source.title || `切片 #${source.chunk_index + 1}` }}</span>
+            <code class="source-trace-id">{{ source.chunk_id.slice(0, 8) }}...</code>
+          </div>
+          <p class="source-trace-text">{{ source.text }}</p>
+        </div>
       </div>
     </div>
     <div v-else class="flashcard-empty">

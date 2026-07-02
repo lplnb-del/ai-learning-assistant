@@ -63,3 +63,11 @@ class CardGenerateFromDocumentRequest(BaseModel):
 class CardGenerateResponse(BaseModel):
     generated_count: int
     cards: list[QACardResponse]
+
+class CardSourceTraceResponse(BaseModel):
+    chunk_id: str
+    knowledge_base_id: str
+    source_document_id: str
+    chunk_index: int
+    title: str | None
+    text: str

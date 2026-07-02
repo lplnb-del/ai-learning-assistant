@@ -121,6 +121,7 @@ Knowledge 当前支持：
 - `DELETE /api/cards/{card_id}`：删除卡片。
 - `POST /api/cards/generate-from-chunks`：从指定 chunks 批量生成候选问答卡片。
 - `POST /api/cards/generate-from-document`：从指定文档的所有 chunks 批量生成候选问答卡片。
+- `GET /api/cards/{card_id}/sources`：追溯问答卡片关联的知识库来源切片。
 
 ## 配置原则
 

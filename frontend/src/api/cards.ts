@@ -156,3 +156,16 @@ export async function generateCardsFromDocument(payload: CardGenerateFromDocumen
     body: JSON.stringify(payload),
   })
 }
+
+export interface CardSourceTracePayload {
+  chunk_id: string
+  knowledge_base_id: string
+  source_document_id: string
+  chunk_index: number
+  title: string | null
+  text: string
+}
+
+export async function traceCardSources(cardId: string): Promise<CardSourceTracePayload[]> {
+  return requestJson(`/api/cards/${cardId}/sources`)
+}
