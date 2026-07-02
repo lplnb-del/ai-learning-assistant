@@ -36,7 +36,7 @@ flowchart TD
     FASTAPI --> AGENTAPI["Agent Router"]
 
     CHAT --> LLM["LangChain Chat Model"]
-    LLM --> DS["DeepSeek API"]
+    LLM --> LLM_PROVIDER["OpenAI Compatible / Ollama / HuggingFace"]
 
     KNOW --> IMPORT["Import Pipeline"]
     IMPORT --> PARSER["Document / URL Parser"]
@@ -94,7 +94,9 @@ Vue 约束：
 - FastAPI
 - uv
 - Pydantic schemas
-- DeepSeek OpenAI-compatible API (via LangChain OpenAI)
+- LangChain OpenAI（兼容任何 OpenAI 协议服务：DeepSeek / OpenAI / Qwen / Moonshot / Groq 等）
+- langchain-ollama（Ollama 本地模型集成）
+- langchain-community HuggingFaceEmbeddings（本地 sentence-transformers 嵌入）
 - LangChain（TextSplitter、Embeddings、Chat Model、RetrievalQA）
 - LangGraph（Agent 多步骤编排）
 - Chroma（向量存储，LangChain 集成）
@@ -207,6 +209,11 @@ API 边界：
 - `POST /api/cards/generate-from-document`：从文档批量生成问答卡片。
 - `PATCH /api/cards/{id}/mastery`：更新卡片掌握程度。
 - `POST /api/agents/run`：Agent 任务启动。
+- `GET /api/settings`：获取当前模型配置。
+- `PUT /api/settings/chat-model`：更新对话模型配置。
+- `PUT /api/settings/embedding-model`：更新嵌入模型配置。
+- `GET /api/settings/presets`：获取 OpenAI 兼容预设服务列表。
+- `POST /api/settings/detect-models`：自动检测可用模型。
 - `GET /api/agents/{run_id}/events`：Agent SSE 事件。
 
 ## 6. Data Flow
@@ -333,6 +340,7 @@ SQLite 保存元数据；Chroma 保存向量索引；文件原文存本地受控
 - `DEEPSEEK_MODEL`
 - `EMBEDDING_PROVIDER`
 - `EMBEDDING_MODEL`
+- 运行时模型配置通过 Settings API 管理，支持 OpenAI 兼容 / Ollama / HuggingFace
 - `CHROMA_PERSIST_DIR`
 - `SQLITE_DB_PATH`
 - `CORS_ALLOW_ORIGINS`

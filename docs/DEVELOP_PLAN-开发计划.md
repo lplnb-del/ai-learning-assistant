@@ -328,15 +328,6 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 
 ## 17. Milestone 10：工程化与简历交付
 
-## 17b. 模型设置页（Settings）
-
-- [x] 后端：Model Factory 支持 OpenAI 兼容协议通用接入 + Ollama 本地 + HuggingFace 嵌入。
-- [x] 后端：Settings API（GET/PUT 配置 + POST 自动检测模型）。
-- [x] 前端：设置页面 UI（对话模型 + 嵌入模型独立配置）。
-- [x] 前端：预设服务快速配置（DeepSeek/OpenAI/Qwen/Moonshot 等）+ 自定义 OpenAI 兼容 + Ollama + HuggingFace 本地嵌入。
-- [x] 设置页面集成到侧边栏导航。
-- [x] 运行时模型配置存储（内存级 MVP）。
-
 目标：让项目可复现、可演示、可写进简历。
 
 任务：
@@ -348,6 +339,17 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - [ ] 增加示例资料和演示问题。
 - [ ] 更新简历项目描述，确保与真实完成状态一致。
 - [ ] 整理 commit 历史和版本标签。
+
+## 17b. 模型设置页（Settings）
+
+- [x] 后端：Model Factory 支持 OpenAI 兼容协议通用接入 + Ollama 本地 + HuggingFace 嵌入。
+- [x] 后端：Settings API（GET/PUT 配置 + POST 自动检测模型 + GET 预设服务列表）。
+- [x] 后端：内置 10 个 OpenAI 兼容预设（DeepSeek / OpenAI / Qwen / Moonshot / Groq / SiliconFlow / vLLM / LM Studio 等）。
+- [x] 前端：设置页面 UI（对话模型 + 嵌入模型独立配置）。
+- [x] 前端：预设服务快速配置 + 自定义 OpenAI 兼容 + Ollama + HuggingFace 本地嵌入。
+- [x] 前端：一键自动检测可用模型列表。
+- [x] 设置页面集成到侧边栏导航。
+- [x] 运行时模型配置存储（内存级 MVP）。
 
 ## 18. 推荐提交顺序
 
