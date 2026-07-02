@@ -2972,3 +2972,9 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+.form-hint {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}

@@ -1,14 +1,29 @@
-import { computed, onMounted, ref, shallowRef } from 'vue'
+﻿import { computed, onMounted, ref, shallowRef } from 'vue'
 import {
   detectModels,
+  getPresets,
   getSettings,
   updateChatModel,
   updateEmbeddingModel,
   type DetectedModel,
   type ModelDetectionResponse,
   type ModelProviderConfig,
+  type PresetInfo,
   type SettingsResponse,
 } from '../api/settings'
+
+export type ProviderType = 'openai_compatible' | 'ollama' | 'huggingface'
+
+const PROVIDER_OPTIONS: { value: ProviderType; label: string; desc: string }[] = [
+  { value: 'openai_compatible', label: 'OpenAI 兼容协议', desc: '支持 DeepSeek / OpenAI / Moonshot / Qwen / Groq / 自部署等' },
+  { value: 'ollama', label: 'Ollama (本地)', desc: '本地运行的 Ollama 模型服务' },
+]
+
+const EMBEDDING_PROVIDER_OPTIONS: { value: ProviderType; label: string; desc: string }[] = [
+  { value: 'openai_compatible', label: 'OpenAI 兼容协议', desc: '云端嵌入 API（DeepSeek / OpenAI / Qwen 等）' },
+  { value: 'ollama', label: 'Ollama (本地)', desc: '本地 Ollama 嵌入模型' },
+  { value: 'huggingface', label: 'HuggingFace (本地)', desc: '本地 sentence-transformers，首次使用自动下载' },
+]
 
 export function useSettingsManager() {
   const loading = ref(false)
@@ -18,31 +33,81 @@ export function useSettingsManager() {
   const detectResult = ref<ModelDetectionResponse | null>(null)
 
   const settings = shallowRef<SettingsResponse | null>(null)
+  const presets = ref<PresetInfo[]>([])
 
-  const chatProvider = ref('deepseek')
+  // Chat config
+  const chatProvider = ref<ProviderType>('openai_compatible')
+  const chatPreset = ref('')
   const chatApiKey = ref('')
   const chatBaseUrl = ref('')
   const chatModel = ref('')
 
-  const embeddingProvider = ref('deepseek')
+  // Embedding config
+  const embeddingProvider = ref<ProviderType>('openai_compatible')
+  const embeddingPreset = ref('')
   const embeddingApiKey = ref('')
   const embeddingBaseUrl = ref('')
   const embeddingModel = ref('')
 
   const detectedModels = ref<DetectedModel[]>([])
 
+  const chatPresetOptions = computed(() =>
+    presets.value.filter((p) => p.default_chat_model),
+  )
+
+  const embeddingPresetOptions = computed(() =>
+    presets.value.filter((p) => p.default_embedding_model || p.key === 'custom'),
+  )
+
+  const currentChatPreset = computed(() =>
+    presets.value.find((p) => p.key === chatPreset.value),
+  )
+
+  const currentEmbeddingPreset = computed(() =>
+    presets.value.find((p) => p.key === embeddingPreset.value),
+  )
+
+  function applyChatPreset(presetKey: string) {
+    chatPreset.value = presetKey
+    const p = presets.value.find((x) => x.key === presetKey)
+    if (p) {
+      chatBaseUrl.value = p.base_url
+      if (p.default_chat_model && !chatModel.value) {
+        chatModel.value = p.default_chat_model
+      }
+    }
+  }
+
+  function applyEmbeddingPreset(presetKey: string) {
+    embeddingPreset.value = presetKey
+    const p = presets.value.find((x) => x.key === presetKey)
+    if (p) {
+      embeddingBaseUrl.value = p.base_url
+      if (p.default_embedding_model && !embeddingModel.value) {
+        embeddingModel.value = p.default_embedding_model
+      }
+    }
+  }
+
   async function loadSettings() {
     loading.value = true
     error.value = null
     try {
-      const data = await getSettings()
+      const [data, presetsData] = await Promise.all([getSettings(), getPresets()])
       settings.value = data
-      chatProvider.value = data.chat_provider
+      presets.value = presetsData.presets
+
+      chatProvider.value = (data.chat_provider as ProviderType) || 'openai_compatible'
+      chatPreset.value = data.chat_preset ?? ''
       chatModel.value = data.chat_model ?? ''
       chatBaseUrl.value = data.chat_base_url ?? ''
-      embeddingProvider.value = data.embedding_provider
+      chatApiKey.value = ''
+
+      embeddingProvider.value = (data.embedding_provider as ProviderType) || 'openai_compatible'
+      embeddingPreset.value = data.embedding_preset ?? ''
       embeddingModel.value = data.embedding_model ?? ''
       embeddingBaseUrl.value = data.embedding_base_url ?? ''
+      embeddingApiKey.value = ''
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
@@ -56,12 +121,12 @@ export function useSettingsManager() {
     try {
       const config: ModelProviderConfig = {
         provider: chatProvider.value,
+        preset: chatPreset.value || undefined,
         api_key: chatApiKey.value || undefined,
         base_url: chatBaseUrl.value || undefined,
         model: chatModel.value || undefined,
       }
-      const data = await updateChatModel(config)
-      settings.value = data
+      settings.value = await updateChatModel(config)
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
@@ -75,12 +140,12 @@ export function useSettingsManager() {
     try {
       const config: ModelProviderConfig = {
         provider: embeddingProvider.value,
+        preset: embeddingPreset.value || undefined,
         api_key: embeddingApiKey.value || undefined,
         base_url: embeddingBaseUrl.value || undefined,
         model: embeddingModel.value || undefined,
       }
-      const data = await updateEmbeddingModel(config)
-      settings.value = data
+      settings.value = await updateEmbeddingModel(config)
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
@@ -92,11 +157,13 @@ export function useSettingsManager() {
     detecting.value = true
     detectResult.value = null
     error.value = null
+    detectedModels.value = []
     try {
       const provider = target === 'chat' ? chatProvider.value : embeddingProvider.value
       const apiKey = target === 'chat' ? chatApiKey.value : embeddingApiKey.value
       const baseUrl = target === 'chat' ? chatBaseUrl.value : embeddingBaseUrl.value
-      const result = await detectModels(provider, apiKey || undefined, baseUrl || undefined)
+      const preset = target === 'chat' ? chatPreset.value : embeddingPreset.value
+      const result = await detectModels(provider, apiKey || undefined, baseUrl || undefined, preset || undefined)
       detectResult.value = result
       detectedModels.value = result.models
     } catch (e: unknown) {
@@ -116,38 +183,37 @@ export function useSettingsManager() {
 
   onMounted(loadSettings)
 
-  const chatProviderLabel = computed(() => {
-    const map: Record<string, string> = { deepseek: 'DeepSeek', openai: 'OpenAI', ollama: 'Ollama (本地)' }
-    return map[chatProvider.value] ?? chatProvider.value
-  })
-
-  const embeddingProviderLabel = computed(() => {
-    const map: Record<string, string> = { deepseek: 'DeepSeek', openai: 'OpenAI', ollama: 'Ollama (本地)' }
-    return map[embeddingProvider.value] ?? embeddingProvider.value
-  })
-
   return {
     loading,
     saving,
     detecting,
     error,
     settings,
+    presets,
     chatProvider,
+    chatPreset,
     chatApiKey,
     chatBaseUrl,
     chatModel,
     embeddingProvider,
+    embeddingPreset,
     embeddingApiKey,
     embeddingBaseUrl,
     embeddingModel,
     detectedModels,
     detectResult,
-    chatProviderLabel,
-    embeddingProviderLabel,
+    chatPresetOptions,
+    embeddingPresetOptions,
+    currentChatPreset,
+    currentEmbeddingPreset,
     loadSettings,
     saveChatConfig,
     saveEmbeddingConfig,
     runDetection,
     selectDetectedModel,
+    applyChatPreset,
+    applyEmbeddingPreset,
+    PROVIDER_OPTIONS,
+    EMBEDDING_PROVIDER_OPTIONS,
   }
 }

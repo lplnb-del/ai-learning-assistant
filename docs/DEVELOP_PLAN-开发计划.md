@@ -330,10 +330,10 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 
 ## 17b. 模型设置页（Settings）
 
-- [x] 后端：Model Factory 支持 DeepSeek / OpenAI / Ollama 多 provider。
+- [x] 后端：Model Factory 支持 OpenAI 兼容协议通用接入 + Ollama 本地 + HuggingFace 嵌入。
 - [x] 后端：Settings API（GET/PUT 配置 + POST 自动检测模型）。
 - [x] 前端：设置页面 UI（对话模型 + 嵌入模型独立配置）。
-- [x] 前端：自动检测本地 Ollama 模型 + 云端模型列表。
+- [x] 前端：预设服务快速配置（DeepSeek/OpenAI/Qwen/Moonshot 等）+ 自定义 OpenAI 兼容 + Ollama + HuggingFace 本地嵌入。
 - [x] 设置页面集成到侧边栏导航。
 - [x] 运行时模型配置存储（内存级 MVP）。
 
