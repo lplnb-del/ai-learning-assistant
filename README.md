@@ -67,14 +67,14 @@ src/ai_study_agent/
   agents/                 Agent 编排
   storage/                SQLite / Chroma 适配
 
-docs/                     PRD、架构、开发计划、UI 设计系统
+docs/                     PRD、架构、开发计划、验收计划、UI 设计系统
 prototype/index.html      高保真 UI 原型参考
 tests/                    后端模型无关测试
 ```
 
 ## 开发状态
 
-当前已完成正式 Vue 前端工程基线、高保真静态工作台、FastAPI 后端工程基线、Chat 前后端垂直闭环、Knowledge 导入基础闭环，以及 RAG 本地检索切片：`frontend/` 使用 Vue 3 + Vite + TypeScript + Tailwind CSS，接入 Vue Router、Pinia 和 @lucide/vue，并还原 Chat、RAG、Agent、Inspector、知识库和 QA 卡片视图；后端已提供 FastAPI app、CORS、统一错误响应、OpenAPI、`/api/health`、Chat 非流式接口、Chat SSE 流式接口、SQLite 知识库元数据表、知识库创建/列表/删除、Markdown/TXT 文本导入切分接口、PDF 文本抽取导入接口、URL 正文导入接口、索引准备入口和 RAG 本地 chunk 检索问答接口；RAG 已具备可替换的本地 hashing embedding provider、JSON 持久化向量索引适配层、cosine similarity 检索、prompt 组装、无命中兜底和来源片段展示。前端知识库页面已接入真实 API，可创建知识库、导入 Markdown/TXT/PDF/URL、查看 chunks、触发索引准备，并通过二次确认删除知识库或文档；RAG 页面可选择知识库、调整 Top K、使用固定演示问题提问、展示来源片段，并在无命中时给出兜底提示。Chat 页面可通过后端调用 DeepSeek Gateway，支持模型、温度、思考深度、上下文保留和联网搜索开关，其中联网搜索当前为接口字段与 UI 开关，后续再接真实搜索能力。旧 Streamlit UI 代码已清空。
+当前已完成正式 Vue 前端工程基线、高保真静态工作台、FastAPI 后端工程基线、Chat 前后端垂直闭环、Knowledge 导入基础闭环，以及 RAG 本地检索切片：`frontend/` 使用 Vue 3 + Vite + TypeScript + Tailwind CSS，接入 Vue Router、Pinia 和 @lucide/vue，并还原 Chat、RAG、Agent、Inspector、知识库和 QA 卡片视图；后端已提供 FastAPI app、CORS、统一错误响应、OpenAPI、`/api/health`、Chat 非流式接口、Chat SSE 流式接口、SQLite 知识库元数据表、知识库创建/列表/删除、Markdown/TXT 文本导入切分接口、PDF 文本抽取导入接口、URL 正文导入接口、索引准备入口和 RAG 本地 chunk 检索问答接口；RAG 已具备可替换的本地 hashing embedding provider、JSON 持久化向量索引适配层、cosine similarity 检索、prompt 组装、无命中兜底和来源片段展示。前端知识库页面已接入真实 API，可创建知识库、导入 Markdown/TXT/PDF/URL、查看 chunks、触发索引准备，并通过二次确认删除知识库或文档；RAG 页面可选择知识库、调整 Top K、使用固定演示问题提问、展示来源片段，并在无命中时给出兜底提示；Chat 与 RAG 的参数控件已完成一轮视觉收口，补上自定义胶囊下拉、统一过渡动画，并修复了参数栏与输入区/顶部内容的重叠问题。Chat 页面可通过后端调用 DeepSeek Gateway，支持模型、温度、思考深度、上下文保留和联网搜索开关，其中联网搜索当前为接口字段与 UI 开关，后续再接真实搜索能力。Agent 方向已收敛为学习角色模式，聚焦教育专家、面试官、出题教练、总结教练等可选角色。旧 Streamlit UI 代码已清空。
 
 ## 本地启动
 
@@ -118,3 +118,7 @@ Knowledge 当前支持：
 - 真实密钥只允许放在本地 `.env` 或系统环境变量中。
 - 禁止提交密钥、令牌、密码或隐私数据。
 - 前端不得直接持有模型 API Key，所有模型调用必须通过后端 API。
+
+## 验收文档
+
+- 当前阶段的验收清单、手动验证脚本和通过标准见 `docs/ACCEPTANCE_PLAN-验收计划.md`
