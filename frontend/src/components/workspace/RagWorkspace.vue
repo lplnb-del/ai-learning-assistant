@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import { AlertCircle, BrainCog, Check, DatabaseZap, Sparkles } from '@lucide/vue'
+import { computed } from 'vue'
 import { useRagWorkspace } from '../../composables/useRagWorkspace'
+import PillSelect from './PillSelect.vue'
 import FloatingPrompt from './FloatingPrompt.vue'
 
 const rag = useRagWorkspace()
+const knowledgeBaseOptions = computed(() =>
+  rag.knowledgeBases.value.map((base) => ({
+    value: base.id,
+    label: base.name,
+  })),
+)
 
 function splitMessageContent(content: string): string[] {
   return content.split('\n').filter(Boolean)
@@ -15,10 +23,13 @@ function splitMessageContent(content: string): string[] {
     <div class="rag-control-strip">
       <label>
         知识库
-        <select v-model="rag.selectedKnowledgeBaseId.value" :disabled="rag.isLoadingBases.value || rag.isAsking.value">
-          <option value="">请选择</option>
-          <option v-for="base in rag.knowledgeBases.value" :key="base.id" :value="base.id">{{ base.name }}</option>
-        </select>
+        <PillSelect
+          v-model="rag.selectedKnowledgeBaseId.value"
+          label="知识库"
+          :options="knowledgeBaseOptions"
+          placeholder="请选择"
+          :disabled="rag.isLoadingBases.value || rag.isAsking.value"
+        />
       </label>
       <label>
         Top K

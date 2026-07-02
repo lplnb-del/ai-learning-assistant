@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AlertCircle, Check, Sparkles } from '@lucide/vue'
+import PillSelect from './PillSelect.vue'
 import { useChatStream } from '../../composables/useChatStream'
 import FloatingPrompt from './FloatingPrompt.vue'
 
@@ -20,6 +21,11 @@ const {
   toggleKeepContext,
   toggleWebSearch,
 } = useChatStream()
+
+const modelOptions = [
+  { value: 'deepseek-v4-flash', label: 'deepseek-v4-flash' },
+  { value: 'deepseek-chat', label: 'deepseek-chat' },
+]
 </script>
 
 <template>
@@ -59,10 +65,7 @@ const {
     <div class="chat-control-strip" aria-label="Chat 设置">
       <label>
         <span>模型</span>
-        <select v-model="model" :disabled="isStreaming">
-          <option value="deepseek-v4-flash">deepseek-v4-flash</option>
-          <option value="deepseek-chat">deepseek-chat</option>
-        </select>
+        <PillSelect v-model="model" label="模型" :options="modelOptions" :disabled="isStreaming" />
       </label>
       <div class="segmented-control" aria-label="思考深度">
         <button
