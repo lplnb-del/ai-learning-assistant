@@ -1,11 +1,13 @@
 export interface RagQuestionPayload {
   knowledge_base_id: string
+  qa_library_ids: string[]
   question: string
   top_k: number
 }
 
 export interface RagSourcePayload {
   chunk_id: string
+  source_type: string
   document_id: string
   document_name: string
   chunk_index: number

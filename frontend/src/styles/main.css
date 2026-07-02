@@ -438,7 +438,8 @@ select:focus-visible {
 }
 
 .rag-control-strip label,
-.rag-control-strip span {
+.rag-control-strip span,
+.rag-library-toggle {
   display: inline-flex;
   min-height: 34px;
   align-items: center;
@@ -468,6 +469,8 @@ select:focus-visible {
 
 .rag-control-strip label:hover,
 .rag-control-strip label:focus-within,
+.rag-library-toggle:hover,
+.rag-library-toggle:focus-visible,
 .chat-control-strip label:hover,
 .chat-control-strip label:focus-within,
 .toggle-control:hover,
@@ -653,6 +656,107 @@ select:focus-visible {
 
 .rag-actions span {
   color: var(--color-text-tertiary);
+}
+
+.rag-qa-library-panel {
+  display: grid;
+  width: min(90%, 760px);
+  gap: 10px;
+  margin: 10px auto 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-elevation-1);
+}
+
+.rag-qa-library-panel header {
+  display: grid;
+  gap: 4px;
+}
+
+.rag-qa-library-panel header strong {
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.rag-qa-library-panel header span {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+.rag-qa-library-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: center;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--color-input-bg);
+}
+
+.rag-qa-library-option span,
+.rag-qa-library-option small {
+  display: block;
+}
+
+.rag-qa-library-option span {
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.rag-qa-library-option small {
+  grid-column: 2;
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+}
+
+.rag-save-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--color-input-bg);
+}
+
+.rag-save-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.rag-save-panel select,
+.rag-save-panel input {
+  width: 100%;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 12px;
+}
+
+.rag-save-divider {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.rag-save-panel button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-accent-text);
+  color: #fff;
 }
 
 .rag-demo-questions {
@@ -1696,6 +1800,104 @@ select:focus-visible {
   background: var(--color-app-bg);
 }
 
+.card-filter-strip,
+.card-create-form {
+  display: grid;
+  gap: 8px;
+}
+
+.card-filter-strip {
+  margin-bottom: 10px;
+}
+
+.card-filter-strip select,
+.card-filter-strip input,
+.card-create-form textarea,
+.card-create-form input {
+  width: 100%;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 12px;
+}
+
+.card-create-form textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.card-nav-button span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-primary-button,
+.sidebar-danger-button,
+.inline-filter-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  padding: 0 14px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 12px;
+}
+
+.sidebar-primary-button {
+  border-color: transparent;
+  background: var(--color-accent-text);
+  color: #fff;
+}
+
+.sidebar-danger-button {
+  margin-top: 8px;
+  color: var(--color-danger);
+}
+
+.stage-filter-strip {
+  width: min(100%, 720px);
+  margin-bottom: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.card-picker-row {
+  display: flex;
+  width: min(100%, 720px);
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.card-picker-row::-webkit-scrollbar {
+  display: none;
+}
+
+.card-chip {
+  min-height: 34px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: var(--color-input-bg);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.card-chip-active {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-text);
+}
+
 .review-stage {
   position: relative;
   display: flex;
@@ -1724,6 +1926,7 @@ select:focus-visible {
   min-height: 410px;
   grid-template-columns: 1fr;
   perspective: 1000px;
+  cursor: pointer;
 }
 
 .flashcard-front,
@@ -1741,7 +1944,7 @@ select:focus-visible {
   transition: transform 500ms var(--ease-standard);
 }
 
-.flashcard:hover .flashcard-front {
+.flashcard-flipped .flashcard-front {
   transform: rotateY(180deg);
 }
 
@@ -1750,7 +1953,7 @@ select:focus-visible {
   border: 2px solid var(--color-accent-text);
 }
 
-.flashcard:hover .flashcard-back {
+.flashcard-flipped .flashcard-back {
   transform: rotateY(360deg);
 }
 
@@ -1830,6 +2033,36 @@ select:focus-visible {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
   opacity: 0.72;
+}
+
+.memory-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.flashcard-empty {
+  display: grid;
+  width: min(100%, 520px);
+  min-height: 300px;
+  place-items: center;
+  border: 1px dashed var(--color-border-soft);
+  border-radius: 24px;
+  padding: 32px;
+  background: var(--color-input-bg);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.flashcard-empty h2 {
+  margin: 8px 0 0;
+  color: var(--color-text-primary);
+  font-size: 20px;
+}
+
+.flashcard-empty p {
+  margin: 0;
+  max-width: 320px;
+  font-size: 13px;
 }
 
 .score-red {
@@ -1970,7 +2203,8 @@ select:focus-visible {
   .mode-tabs,
   .mode-settings,
   .prompt-toolbar,
-  .flashcard-meta {
+  .flashcard-meta,
+  .stage-filter-strip {
     width: 100%;
   }
 
@@ -2023,5 +2257,9 @@ select:focus-visible {
 
   .flashcard h2 {
     font-size: 20px;
+  }
+
+  .stage-filter-strip {
+    grid-template-columns: 1fr;
   }
 }

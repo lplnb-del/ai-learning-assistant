@@ -44,6 +44,7 @@ def test_rag_api_answers_with_local_sources(monkeypatch, tmp_path):
     assert payload["retrieval_mode"] == "local_hashing_embedding"
     assert "本地资料摘要" in payload["answer"]
     assert payload["sources"][0]["document_name"] == "rag.md"
+    assert payload["sources"][0]["source_type"] == "knowledge_chunk"
     assert payload["sources"][0]["score"] > 0
     assert "资料片段" in payload["prompt_preview"]
 
@@ -78,6 +79,46 @@ def test_rag_api_uses_persistent_vector_index(monkeypatch, tmp_path):
     payload = response.json()
     assert payload["retrieval_mode"] == "local_vector_index"
     assert payload["sources"][0]["document_name"] == "rag.md"
+
+
+def test_rag_api_can_mix_qa_library_sources(monkeypatch, tmp_path):
+    monkeypatch.setenv("AI_STUDY_AGENT_DB_PATH", str(tmp_path / "knowledge.sqlite3"))
+    client = TestClient(create_app())
+    knowledge_base = client.post("/api/knowledge/bases", json={"name": "RAG 资料库"}).json()
+    qa_library = client.post("/api/cards/libraries", json={"name": "面试问答库"}).json()
+    client.post(
+        f"/api/knowledge/bases/{knowledge_base['id']}/documents/import-text",
+        json={
+            "name": "rag.md",
+            "content_type": "text/markdown",
+            "content": "# RAG 入门\n\nRAG 会先检索资料，再把命中的上下文交给大模型组织答案。" * 20,
+        },
+    )
+    client.post(
+        "/api/cards",
+        json={
+            "qa_library_id": qa_library["id"],
+            "question": "RAG 会先做什么？",
+            "answer": "RAG 会先检索知识库和已有问答，再组织最终回答。",
+            "tags": ["RAG"],
+        },
+    )
+
+    response = client.post(
+        "/api/rag/ask",
+        json={
+            "knowledge_base_id": knowledge_base["id"],
+            "qa_library_ids": [qa_library["id"]],
+            "question": "RAG 会先做什么？",
+            "top_k": 3,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "qa_library_hybrid" in payload["retrieval_mode"]
+    assert any(source["source_type"] == "qa_card" for source in payload["sources"])
+    assert "问答库" in payload["answer"]
 
 
 def test_rag_api_rejects_empty_knowledge_base(monkeypatch, tmp_path):

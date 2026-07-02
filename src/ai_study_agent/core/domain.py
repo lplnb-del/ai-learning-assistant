@@ -90,12 +90,22 @@ class RetrievedChunk:
 @dataclass(frozen=True)
 class QACard:
     id: str
-    knowledge_base_id: str | None
     question: str
     answer: str
+    qa_library_id: str | None = None
+    knowledge_base_id: str | None = None
     source_chunk_ids: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     mastery: MasteryLevel = MasteryLevel.NEW
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True)
+class QALibrary:
+    id: str
+    name: str
+    description: str = ""
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 

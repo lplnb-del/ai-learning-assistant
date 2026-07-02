@@ -1,4 +1,5 @@
 import { computed, onMounted, readonly, ref, shallowRef } from 'vue'
+import { createQaCard, createQaLibrary, listQaLibraries, type QALibraryPayload } from '../api/cards'
 import { listKnowledgeBases, type KnowledgeBasePayload } from '../api/knowledge'
 import { askRagQuestion, type RagSourcePayload } from '../api/rag'
 
@@ -7,8 +8,11 @@ export interface RagViewMessage {
   role: 'user' | 'assistant'
   content: string
   status?: string
-  sources?: RagSourcePayload[]
+  sources?: readonly RagSourcePayload[]
   promptPreview?: string
+  question?: string
+  knowledgeBaseId?: string
+  savedCardId?: string
 }
 
 const initialMessages: RagViewMessage[] = [
@@ -20,9 +24,9 @@ const initialMessages: RagViewMessage[] = [
   {
     id: 'sample-assistant',
     role: 'assistant',
-    status: '本地 RAG 已就绪，可选择知识库后提问',
+    status: '本地 RAG 已就绪，可选择知识库和问答库后提问',
     content:
-      'RAG 会先从知识库检索相关 chunks，再把问题和资料片段组装成 prompt。当前阶段先返回本地检索摘要和来源，后续会接入 Embedding/Chroma 与模型生成。',
+      'RAG 会先从知识库检索相关 chunks，也可以补充匹配问答库里的已有答案表达，再把问题和参考资料组装成 prompt。',
   },
 ]
 
@@ -35,33 +39,50 @@ const demoQuestions = [
 export function useRagWorkspace() {
   const messages = ref<RagViewMessage[]>([...initialMessages])
   const knowledgeBases = ref<KnowledgeBasePayload[]>([])
+  const qaLibraries = ref<QALibraryPayload[]>([])
+
   const selectedKnowledgeBaseId = shallowRef('')
+  const selectedQaLibraryIds = ref<string[]>([])
   const input = shallowRef('')
   const topK = shallowRef(3)
+
   const isLoadingBases = shallowRef(false)
   const isAsking = shallowRef(false)
+  const isSavingCard = shallowRef(false)
   const errorMessage = shallowRef('')
+  const cardMessage = shallowRef('')
+
+  const activeSaveMessageId = shallowRef('')
+  const saveCardLibraryId = shallowRef('')
+  const saveCardNewLibraryName = shallowRef('')
+  const saveCardNewLibraryDescription = shallowRef('')
+  const isQaLibraryPickerOpen = shallowRef(false)
 
   const selectedKnowledgeBase = computed(
     () => knowledgeBases.value.find((base) => base.id === selectedKnowledgeBaseId.value) ?? null,
   )
+  const selectedQaLibraries = computed(() =>
+    qaLibraries.value.filter((library) => selectedQaLibraryIds.value.includes(library.id)),
+  )
   const canSubmit = computed(
     () => input.value.trim().length > 0 && Boolean(selectedKnowledgeBaseId.value) && !isAsking.value,
   )
+
   onMounted(() => {
-    void refreshKnowledgeBases()
+    void initialize()
   })
 
-  async function refreshKnowledgeBases() {
+  async function initialize() {
     isLoadingBases.value = true
     errorMessage.value = ''
     try {
       knowledgeBases.value = await listKnowledgeBases()
+      qaLibraries.value = await listQaLibraries()
       if (!selectedKnowledgeBaseId.value && knowledgeBases.value[0]) {
         selectedKnowledgeBaseId.value = knowledgeBases.value[0].id
       }
     } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : '读取知识库失败'
+      errorMessage.value = error instanceof Error ? error.message : '读取 RAG 资源失败'
     } finally {
       isLoadingBases.value = false
     }
@@ -74,6 +95,7 @@ export function useRagWorkspace() {
     }
 
     errorMessage.value = ''
+    cardMessage.value = ''
     input.value = ''
     isAsking.value = true
 
@@ -86,21 +108,24 @@ export function useRagWorkspace() {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: '',
-      status: '正在检索本地知识库',
+      status: '正在检索知识库和已选问答库',
+      question,
+      knowledgeBaseId: selectedKnowledgeBaseId.value,
     }
     messages.value = [...messages.value, userMessage, assistantMessage]
 
     try {
       const result = await askRagQuestion({
         knowledge_base_id: selectedKnowledgeBaseId.value,
+        qa_library_ids: [...selectedQaLibraryIds.value],
         question,
         top_k: topK.value,
       })
       assistantMessage.content = result.answer
       assistantMessage.status =
         result.sources.length > 0
-          ? `命中 ${result.sources.length} 个片段 · ${result.retrieval_mode}`
-          : '未命中相关片段'
+          ? `命中 ${result.sources.length} 条参考 · ${result.retrieval_mode}`
+          : '未命中相关参考'
       assistantMessage.sources = result.sources
       assistantMessage.promptPreview = result.prompt_preview
       messages.value = [...messages.value]
@@ -119,20 +144,98 @@ export function useRagWorkspace() {
     input.value = question
   }
 
+  function toggleQaLibraryPicker() {
+    isQaLibraryPickerOpen.value = !isQaLibraryPickerOpen.value
+  }
+
+  function toggleQaLibrarySelection(libraryId: string) {
+    selectedQaLibraryIds.value = selectedQaLibraryIds.value.includes(libraryId)
+      ? selectedQaLibraryIds.value.filter((item) => item !== libraryId)
+      : [...selectedQaLibraryIds.value, libraryId]
+  }
+
+  function openSavePanel(messageId: string) {
+    activeSaveMessageId.value = activeSaveMessageId.value === messageId ? '' : messageId
+    if (activeSaveMessageId.value) {
+      saveCardLibraryId.value = selectedQaLibraryIds.value[0] ?? qaLibraries.value[0]?.id ?? ''
+      saveCardNewLibraryName.value = ''
+      saveCardNewLibraryDescription.value = ''
+    }
+  }
+
+  async function saveAsCard(messageId: string) {
+    const message = messages.value.find((item) => item.id === messageId)
+    if (!message || message.role !== 'assistant' || !message.question || !message.content.trim()) {
+      return
+    }
+
+    isSavingCard.value = true
+    errorMessage.value = ''
+    cardMessage.value = ''
+    try {
+      let qaLibraryId = saveCardLibraryId.value
+      if (!qaLibraryId) {
+        const newLibraryName = saveCardNewLibraryName.value.trim()
+        if (!newLibraryName) {
+          throw new Error('请选择一个问答库，或先新建一个问答库')
+        }
+        const createdLibrary = await createQaLibrary({
+          name: newLibraryName,
+          description: saveCardNewLibraryDescription.value.trim(),
+        })
+        qaLibraries.value = [createdLibrary, ...qaLibraries.value]
+        qaLibraryId = createdLibrary.id
+      }
+
+      const card = await createQaCard({
+        qa_library_id: qaLibraryId,
+        question: message.question,
+        answer: message.content,
+        knowledge_base_id: message.knowledgeBaseId || null,
+        source_chunk_ids: message.sources
+          ?.filter((source) => source.source_type === 'knowledge_chunk')
+          .map((source) => source.chunk_id) ?? [],
+        tags: ['RAG'],
+      })
+      message.savedCardId = card.id
+      messages.value = [...messages.value]
+      activeSaveMessageId.value = ''
+      cardMessage.value = '已保存到问答库'
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : '保存卡片失败'
+    } finally {
+      isSavingCard.value = false
+    }
+  }
+
   return {
     messages: readonly(messages),
     demoQuestions,
     knowledgeBases: readonly(knowledgeBases),
+    qaLibraries: readonly(qaLibraries),
     selectedKnowledgeBaseId,
+    selectedQaLibraryIds,
     selectedKnowledgeBase,
+    selectedQaLibraries,
     input,
     topK,
     isLoadingBases,
     isAsking,
+    isSavingCard,
     errorMessage,
+    cardMessage,
     canSubmit,
-    refreshKnowledgeBases,
+    activeSaveMessageId,
+    saveCardLibraryId,
+    saveCardNewLibraryName,
+    saveCardNewLibraryDescription,
+    isQaLibraryPickerOpen,
+    initialize,
     useDemoQuestion,
     submit,
+    toggleQaLibraryPicker,
+    toggleQaLibrarySelection,
+    openSavePanel,
+    saveAsCard,
   }
 }

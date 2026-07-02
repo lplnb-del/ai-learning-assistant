@@ -9,8 +9,7 @@ from ai_study_agent.api.errors import ApiError
 from ai_study_agent.api.schemas.common import RouterStatusResponse
 from ai_study_agent.api.schemas.rag import RagQuestionRequest, RagQuestionResponse, RagSourceResponse
 from ai_study_agent.core.config import AppConfig
-from ai_study_agent.core.domain import RetrievedChunk
-from ai_study_agent.rag.service import RagAnswer, RagService, RagServiceError
+from ai_study_agent.rag.service import RagAnswer, RagService, RagServiceError, RagSourceItem
 
 router = APIRouter(prefix="/rag", tags=["rag"])
 
@@ -29,6 +28,7 @@ def ask_rag_question(request: RagQuestionRequest) -> RagQuestionResponse:
     try:
         answer = service.answer_question(
             knowledge_base_id=request.knowledge_base_id,
+            qa_library_ids=request.qa_library_ids,
             question=request.question,
             top_k=request.top_k,
         )
@@ -50,18 +50,14 @@ def _question_response(answer: RagAnswer) -> RagQuestionResponse:
     )
 
 
-def _source_response(source: RetrievedChunk) -> RagSourceResponse:
+def _source_response(source: RagSourceItem) -> RagSourceResponse:
     return RagSourceResponse(
-        chunk_id=source.chunk.id,
-        document_id=source.chunk.source_document_id,
+        chunk_id=source.source_id,
+        source_type=source.source_type,
+        document_id=source.document_id,
         document_name=source.document_name,
-        chunk_index=source.chunk.index,
-        title=source.chunk.title,
-        excerpt=_excerpt(source.chunk.text),
+        chunk_index=source.chunk_index,
+        title=source.title,
+        excerpt=source.excerpt,
         score=source.score,
     )
-
-
-def _excerpt(text: str, limit: int = 220) -> str:
-    normalized = " ".join(text.split())
-    return normalized if len(normalized) <= limit else f"{normalized[:limit].rstrip()}..."

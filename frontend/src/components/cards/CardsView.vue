@@ -1,45 +1,67 @@
 <script setup lang="ts">
-import { Database, MousePointerClick, Plus } from '@lucide/vue'
-import { decks, flashCard } from '../../mock/workspace'
+import CardsCreatePanel from './CardsCreatePanel.vue'
+import CardsLibrarySidebar from './CardsLibrarySidebar.vue'
+import CardsReviewStage from './CardsReviewStage.vue'
+import { useCardsManager } from '../../composables/useCardsManager'
+
+const cards = useCardsManager()
 </script>
 
 <template>
   <section class="cards-view" aria-label="QA 记忆卡片">
-    <aside class="resource-sidebar cards-sidebar">
-      <header><span>我的卡组</span><button type="button" aria-label="新建卡组"><Plus :size="16" /></button></header>
-      <button v-for="deck in decks" :key="deck.id" class="resource-nav-button" :class="{ 'resource-nav-active': deck.active }" type="button">
-        <component :is="deck.icon" :size="17" />
-        <span>{{ deck.label }}</span>
-        <code>{{ deck.count }}</code>
-      </button>
-    </aside>
+    <CardsLibrarySidebar
+      :libraries="cards.qaLibraries.value"
+      :selected-library-id="cards.selectedLibraryId.value"
+      :library-name-draft="cards.libraryNameDraft.value"
+      :library-description-draft="cards.libraryDescriptionDraft.value"
+      :is-loading="cards.isLoading.value"
+      :is-saving="cards.isSaving.value"
+      :can-create-library="cards.canCreateLibrary.value"
+      @select-library="cards.selectLibrary"
+      @update-library-name-draft="cards.libraryNameDraft.value = $event"
+      @update-library-description-draft="cards.libraryDescriptionDraft.value = $event"
+      @create-library="cards.createLibrary"
+      @remove-selected-library="cards.removeSelectedLibrary"
+      @refresh="cards.applyFilters"
+    />
 
-    <main class="review-stage">
-      <header>
-        <span>正在复习: 1 / 42</span>
-        <button type="button">退出复习</button>
-      </header>
+    <CardsReviewStage
+      :selected-library="cards.selectedLibrary.value"
+      :cards="cards.cards.value"
+      :selected-card="cards.selectedCard.value"
+      :selected-card-id="cards.selectedCardId.value"
+      :selected-knowledge-base-id="cards.selectedKnowledgeBaseId.value"
+      :selected-mastery="cards.selectedMastery.value"
+      :tag-filter="cards.tagFilter.value"
+      :card-position="cards.cardPosition.value"
+      :is-flipped="cards.isFlipped.value"
+      :is-saving="cards.isSaving.value"
+      :error-message="cards.errorMessage.value"
+      :success-message="cards.successMessage.value"
+      :knowledge-bases="cards.knowledgeBases.value"
+      @update-selected-knowledge-base-id="cards.selectedKnowledgeBaseId.value = $event"
+      @update-selected-mastery="cards.selectedMastery.value = $event"
+      @update-tag-filter="cards.tagFilter.value = $event"
+      @apply-filters="cards.applyFilters"
+      @select-card="cards.selectCard"
+      @toggle-flip="cards.toggleFlip"
+      @remove-selected-card="cards.removeSelectedCard"
+      @set-mastery="cards.setMastery"
+    />
 
-      <div class="flashcard">
-        <div class="flashcard-front">
-          <div class="flashcard-meta">
-            <span># {{ flashCard.tag }}</span>
-            <span><Database :size="13" />关联知识库</span>
-          </div>
-          <h2>{{ flashCard.question }}</h2>
-          <p><MousePointerClick :size="16" />点击翻转查看答案</p>
-        </div>
-        <div class="flashcard-back">
-          <h3>参考答案</h3>
-          <p v-for="line in flashCard.answer" :key="line">{{ line }}</p>
-        </div>
-      </div>
-
-      <div class="memory-actions">
-        <button class="score-red" type="button"><strong>重来</strong><span>&lt; 1 min</span></button>
-        <button class="score-yellow" type="button"><strong>模糊</strong><span>10 min</span></button>
-        <button class="score-green" type="button"><strong>掌握</strong><span>1 day</span></button>
-      </div>
-    </main>
+    <CardsCreatePanel
+      :selected-library="cards.selectedLibrary.value"
+      :question-draft="cards.questionDraft.value"
+      :answer-draft="cards.answerDraft.value"
+      :tags-draft="cards.tagsDraft.value"
+      :card-knowledge-base-id-draft="cards.cardKnowledgeBaseIdDraft.value"
+      :knowledge-bases="cards.knowledgeBases.value"
+      :can-create-card="cards.canCreateCard.value"
+      @update-question-draft="cards.questionDraft.value = $event"
+      @update-answer-draft="cards.answerDraft.value = $event"
+      @update-tags-draft="cards.tagsDraft.value = $event"
+      @update-card-knowledge-base-id-draft="cards.cardKnowledgeBaseIdDraft.value = $event"
+      @create-manual-card="cards.createManualCard"
+    />
   </section>
 </template>
