@@ -6,7 +6,8 @@
 
 - 高保真还原 `prototype/index.html`。
 - 支撑 Chat、RAG、Agent 三种严格区分的模式。
-- 让 DeepSeek、RAG、LangChain/LangGraph、Agent Capability Layer 都沉在后端。
+- 让 DeepSeek、RAG、LangChain / LangGraph、Agent Capability Layer 都沉在后端。
+- 全面采用 LangChain 生态：LangChain TextSplitter、Chroma 向量库、LangChain Embeddings、LangChain Chat Model、LangGraph Agent 编排。
 - 保障前端不接触 API Key。
 - 形成可演示、可测试、可写进简历的完整工程。
 
@@ -34,18 +35,19 @@ flowchart TD
     FASTAPI --> CARDAPI["Cards Router"]
     FASTAPI --> AGENTAPI["Agent Router"]
 
-    CHAT --> LLM["LLM Gateway"]
+    CHAT --> LLM["LangChain Chat Model"]
     LLM --> DS["DeepSeek API"]
 
     KNOW --> IMPORT["Import Pipeline"]
     IMPORT --> PARSER["Document / URL Parser"]
-    PARSER --> SPLITTER["Chunk Splitter"]
+    PARSER --> SPLITTER["LangChain TextSplitter"]
     SPLITTER --> DB["SQLite Metadata Store"]
-    SPLITTER --> EMBED["Embedding Service"]
+    SPLITTER --> EMBED["LangChain Embeddings"]
     EMBED --> VECTOR["Chroma Vector Store"]
 
     RAGAPI --> RAG["RAG Service"]
-    RAG --> VECTOR
+    RAG --> RETRIEVER["LangChain Retriever"]
+    RETRIEVER --> VECTOR
     RAG --> DB
     RAG --> LLM
 
@@ -92,10 +94,11 @@ Vue 约束：
 - FastAPI
 - uv
 - Pydantic schemas
-- DeepSeek OpenAI-compatible API
-- LangChain / LangGraph
-- SQLite
-- Chroma
+- DeepSeek OpenAI-compatible API (via LangChain OpenAI)
+- LangChain（TextSplitter、Embeddings、Chat Model、RetrievalQA）
+- LangGraph（Agent 多步骤编排）
+- Chroma（向量存储，LangChain 集成）
+- SQLite（元数据存储）
 - pytest
 
 ### 3.3 Communication

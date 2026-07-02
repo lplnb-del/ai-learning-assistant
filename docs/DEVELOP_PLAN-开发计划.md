@@ -41,10 +41,11 @@
 - FastAPI
 - uv
 - Pydantic schemas
-- DeepSeek OpenAI-compatible API
-- LangChain / LangGraph
+- DeepSeek OpenAI-compatible API (via langchain-openai)
+- LangChain（langchain-text-splitters、langchain-openai、langchain-community）
+- LangGraph（Agent 多步骤编排）
+- Chroma（langchain-community Chroma 集成）
 - SQLite
-- Chroma
 - pytest
 
 后端原则：
