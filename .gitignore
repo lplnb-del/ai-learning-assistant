@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Personal resume
+docs/实习简历-李鹏亮.md
+
+# Local data
+data/
+*.db
+*.sqlite
+*.sqlite3
+chroma/
+vector_store/
+logs/
+*.log
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Node / frontend build artifacts
+node_modules/
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

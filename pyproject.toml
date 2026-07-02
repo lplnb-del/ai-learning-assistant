@@ -1,0 +1,25 @@
+[project]
+name = "ai-study-agent"
+version = "0.1.0"
+description = "AI knowledge workbench for Chat, RAG, and Agent learning workflows."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.138.2",
+    "pypdf>=6.14.2",
+    "uvicorn[standard]>=0.49.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.5.0",
+    "pytest>=8.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

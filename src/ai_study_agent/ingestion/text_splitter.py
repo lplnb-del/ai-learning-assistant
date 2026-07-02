@@ -1,0 +1,124 @@
+"""Text cleaning and chunking utilities for Markdown and plain text."""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+
+
+SUPPORTED_CONTENT_TYPES = {"text/markdown", "text/plain"}
+
+
+@dataclass(frozen=True)
+class TextChunkDraft:
+    index: int
+    text: str
+    title: str | None
+    metadata: dict[str, str]
+
+
+def normalize_content_type(content_type: str, file_name: str = "") -> str:
+    lowered = content_type.strip().lower()
+    if lowered in SUPPORTED_CONTENT_TYPES:
+        return lowered
+    suffix = file_name.lower().rsplit(".", 1)[-1] if "." in file_name else ""
+    if suffix in {"md", "markdown"}:
+        return "text/markdown"
+    if suffix == "txt":
+        return "text/plain"
+    return lowered or "text/plain"
+
+
+def clean_text(text: str) -> str:
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = re.sub(r"[ \t]+", " ", normalized)
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+    return normalized.strip()
+
+
+def split_text(text: str, *, chunk_size: int = 800, chunk_overlap: int = 120) -> list[TextChunkDraft]:
+    if chunk_size < 200:
+        raise ValueError("chunk_size 不能小于 200")
+    if chunk_overlap < 0:
+        raise ValueError("chunk_overlap 不能小于 0")
+    if chunk_overlap >= chunk_size:
+        raise ValueError("chunk_overlap 必须小于 chunk_size")
+
+    cleaned = clean_text(text)
+    if not cleaned:
+        return []
+
+    sections = _split_into_sections(cleaned)
+    chunks: list[TextChunkDraft] = []
+    current_text = ""
+    current_title: str | None = None
+
+    for title, paragraph in sections:
+        candidate = paragraph if not current_text else f"{current_text}\n\n{paragraph}"
+        if len(candidate) <= chunk_size:
+            current_text = candidate
+            current_title = current_title or title
+            continue
+        if current_text:
+            chunks.extend(_window_chunk(current_text, current_title, chunk_size, chunk_overlap, len(chunks)))
+        current_text = paragraph
+        current_title = title
+
+    if current_text:
+        chunks.extend(_window_chunk(current_text, current_title, chunk_size, chunk_overlap, len(chunks)))
+
+    return chunks
+
+
+def _split_into_sections(text: str) -> list[tuple[str | None, str]]:
+    title: str | None = None
+    sections: list[tuple[str | None, str]] = []
+    buffer: list[str] = []
+
+    for block in text.split("\n\n"):
+        heading = _extract_heading(block)
+        if heading:
+            if buffer:
+                sections.append((title, "\n\n".join(buffer).strip()))
+                buffer = []
+            title = heading
+        buffer.append(block.strip())
+
+    if buffer:
+        sections.append((title, "\n\n".join(buffer).strip()))
+    return [(item_title, body) for item_title, body in sections if body]
+
+
+def _extract_heading(block: str) -> str | None:
+    first_line = block.splitlines()[0].strip()
+    match = re.match(r"^(#{1,6})\s+(.+)$", first_line)
+    return match.group(2).strip() if match else None
+
+
+def _window_chunk(
+    text: str,
+    title: str | None,
+    chunk_size: int,
+    chunk_overlap: int,
+    start_index: int,
+) -> list[TextChunkDraft]:
+    chunks: list[TextChunkDraft] = []
+    cursor = 0
+    index = start_index
+    while cursor < len(text):
+        end = min(cursor + chunk_size, len(text))
+        chunk_text = text[cursor:end].strip()
+        if chunk_text:
+            chunks.append(
+                TextChunkDraft(
+                    index=index,
+                    text=chunk_text,
+                    title=title,
+                    metadata={"char_start": str(cursor), "char_end": str(end)},
+                )
+            )
+            index += 1
+        if end >= len(text):
+            break
+        cursor = max(end - chunk_overlap, cursor + 1)
+    return chunks
