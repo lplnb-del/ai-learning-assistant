@@ -27,7 +27,7 @@ def ask_rag_question(request: RagQuestionRequest) -> RagQuestionResponse:
     service = build_service()
     try:
         answer = service.answer_question(
-            knowledge_base_id=request.knowledge_base_id,
+            knowledge_base_ids=request.knowledge_base_ids,
             qa_library_ids=request.qa_library_ids,
             question=request.question,
             top_k=request.top_k,

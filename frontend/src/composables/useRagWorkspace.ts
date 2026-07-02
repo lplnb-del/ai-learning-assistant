@@ -11,7 +11,7 @@ export interface RagViewMessage {
   sources?: readonly RagSourcePayload[]
   promptPreview?: string
   question?: string
-  knowledgeBaseId?: string
+  knowledgeBaseIds?: string[]
   savedCardId?: string
 }
 
@@ -41,7 +41,7 @@ export function useRagWorkspace() {
   const knowledgeBases = ref<KnowledgeBasePayload[]>([])
   const qaLibraries = ref<QALibraryPayload[]>([])
 
-  const selectedKnowledgeBaseId = shallowRef('')
+  const selectedKnowledgeBaseIds = ref<string[]>([])
   const selectedQaLibraryIds = ref<string[]>([])
   const input = shallowRef('')
   const topK = shallowRef(3)
@@ -58,14 +58,14 @@ export function useRagWorkspace() {
   const saveCardNewLibraryDescription = shallowRef('')
   const isQaLibraryPickerOpen = shallowRef(false)
 
-  const selectedKnowledgeBase = computed(
-    () => knowledgeBases.value.find((base) => base.id === selectedKnowledgeBaseId.value) ?? null,
+  const selectedKnowledgeBases = computed(() =>
+    knowledgeBases.value.filter((base) => selectedKnowledgeBaseIds.value.includes(base.id)),
   )
   const selectedQaLibraries = computed(() =>
     qaLibraries.value.filter((library) => selectedQaLibraryIds.value.includes(library.id)),
   )
   const canSubmit = computed(
-    () => input.value.trim().length > 0 && Boolean(selectedKnowledgeBaseId.value) && !isAsking.value,
+    () => input.value.trim().length > 0 && selectedKnowledgeBaseIds.value.length > 0 && !isAsking.value,
   )
 
   onMounted(() => {
@@ -78,8 +78,8 @@ export function useRagWorkspace() {
     try {
       knowledgeBases.value = await listKnowledgeBases()
       qaLibraries.value = await listQaLibraries()
-      if (!selectedKnowledgeBaseId.value && knowledgeBases.value[0]) {
-        selectedKnowledgeBaseId.value = knowledgeBases.value[0].id
+      if (!selectedKnowledgeBaseIds.value.length && knowledgeBases.value.length) {
+        selectedKnowledgeBaseIds.value = [knowledgeBases.value[0].id]
       }
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : '读取 RAG 资源失败'
@@ -110,13 +110,13 @@ export function useRagWorkspace() {
       content: '',
       status: '正在检索知识库和已选问答库',
       question,
-      knowledgeBaseId: selectedKnowledgeBaseId.value,
+      knowledgeBaseIds: [...selectedKnowledgeBaseIds.value],
     }
     messages.value = [...messages.value, userMessage, assistantMessage]
 
     try {
       const result = await askRagQuestion({
-        knowledge_base_id: selectedKnowledgeBaseId.value,
+        knowledge_base_ids: [...selectedKnowledgeBaseIds.value],
         qa_library_ids: [...selectedQaLibraryIds.value],
         question,
         top_k: topK.value,
@@ -146,6 +146,12 @@ export function useRagWorkspace() {
 
   function toggleQaLibraryPicker() {
     isQaLibraryPickerOpen.value = !isQaLibraryPickerOpen.value
+  }
+
+  function toggleKnowledgeBaseSelection(baseId: string) {
+    selectedKnowledgeBaseIds.value = selectedKnowledgeBaseIds.value.includes(baseId)
+      ? selectedKnowledgeBaseIds.value.filter((item) => item !== baseId)
+      : [...selectedKnowledgeBaseIds.value, baseId]
   }
 
   function toggleQaLibrarySelection(libraryId: string) {
@@ -191,7 +197,7 @@ export function useRagWorkspace() {
         qa_library_id: qaLibraryId,
         question: message.question,
         answer: message.content,
-        knowledge_base_id: message.knowledgeBaseId || null,
+        knowledge_base_id: message.knowledgeBaseIds?.[0] || null,
         source_chunk_ids: message.sources
           ?.filter((source) => source.source_type === 'knowledge_chunk')
           .map((source) => source.chunk_id) ?? [],
@@ -213,9 +219,10 @@ export function useRagWorkspace() {
     demoQuestions,
     knowledgeBases: readonly(knowledgeBases),
     qaLibraries: readonly(qaLibraries),
-    selectedKnowledgeBaseId,
+    selectedKnowledgeBaseIds,
+    toggleKnowledgeBaseSelection,
     selectedQaLibraryIds,
-    selectedKnowledgeBase,
+    selectedKnowledgeBases,
     selectedQaLibraries,
     input,
     topK,

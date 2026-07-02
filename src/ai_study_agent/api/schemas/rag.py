@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class RagQuestionRequest(BaseModel):
-    knowledge_base_id: str = Field(min_length=1, max_length=120)
+    knowledge_base_ids: list[str] = Field(min_length=1, max_length=8)
     qa_library_ids: list[str] = Field(default_factory=list, max_length=8)
     question: str = Field(min_length=1, max_length=2000)
     top_k: int = Field(default=3, ge=1, le=8)

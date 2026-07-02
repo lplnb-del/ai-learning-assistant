@@ -60,7 +60,7 @@ class RagService:
     def answer_question(
         self,
         *,
-        knowledge_base_id: str,
+        knowledge_base_ids: list[str],
         qa_library_ids: list[str] | None = None,
         question: str,
         top_k: int = 3,
@@ -68,21 +68,36 @@ class RagService:
         cleaned_question = question.strip()
         if not cleaned_question:
             raise RagServiceError("问题不能为空")
-        if self._repository.get_knowledge_base(knowledge_base_id) is None:
-            raise RagServiceError("知识库不存在")
+        cleaned_kb_ids = [item.strip() for item in knowledge_base_ids if item.strip()]
+        if not cleaned_kb_ids:
+            raise RagServiceError("至少需要选择一个知识库")
+        for kb_id in cleaned_kb_ids:
+            if self._repository.get_knowledge_base(kb_id) is None:
+                raise RagServiceError(f"知识库不存在：{kb_id}")
+
         selected_qa_library_ids = [item for item in (qa_library_ids or []) if item]
         qa_libraries = self._validate_qa_libraries(selected_qa_library_ids)
 
-        if self._repository.count_chunks(knowledge_base_id) == 0:
-            raise RagServiceError("当前知识库还没有可检索的 chunks")
-
         query_embedding = self._embedding_provider.embed(cleaned_question)
-        sources = self._vector_index.search(knowledge_base_id, query_embedding, top_k)
-        retrieval_mode = "local_vector_index"
-        if not sources and self._vector_index.count_entries(knowledge_base_id) == 0:
-            candidates = self._repository.list_chunks_for_knowledge_base(knowledge_base_id)
-            sources = _rank_chunks(candidates, cleaned_question, top_k, self._embedding_provider)
-            retrieval_mode = self._embedding_provider.name
+        all_sources: list[RetrievedChunk] = []
+        retrieval_mode_parts: list[str] = []
+        for kb_id in cleaned_kb_ids:
+            if self._repository.count_chunks(kb_id) == 0:
+                continue
+            kb_sources = self._vector_index.search(kb_id, query_embedding, top_k)
+            if kb_sources:
+                all_sources.extend(kb_sources)
+                if "local_vector_index" not in retrieval_mode_parts:
+                    retrieval_mode_parts.append("local_vector_index")
+            elif self._vector_index.count_entries(kb_id) == 0:
+                candidates = self._repository.list_chunks_for_knowledge_base(kb_id)
+                ranked = _rank_chunks(candidates, cleaned_question, top_k, self._embedding_provider)
+                all_sources.extend(ranked)
+                mode_name = self._embedding_provider.name
+                if mode_name not in retrieval_mode_parts:
+                    retrieval_mode_parts.append(mode_name)
+        sources = sorted(all_sources, key=lambda item: item.score, reverse=True)[:top_k]
+        retrieval_mode = "+".join(retrieval_mode_parts) if retrieval_mode_parts else "no_results"
 
         card_sources = _rank_qa_cards(
             self._card_repository.list_cards(qa_library_id=None),

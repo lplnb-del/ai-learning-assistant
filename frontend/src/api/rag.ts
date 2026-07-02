@@ -1,5 +1,5 @@
 export interface RagQuestionPayload {
-  knowledge_base_id: string
+  knowledge_base_ids: string[]
   qa_library_ids: string[]
   question: string
   top_k: number

@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import { AlertCircle, BookMarked, BrainCog, Check, DatabaseZap, Library, Sparkles } from '@lucide/vue'
-import { computed } from 'vue'
 import { useRagWorkspace } from '../../composables/useRagWorkspace'
 import FloatingPrompt from './FloatingPrompt.vue'
-import PillSelect from './PillSelect.vue'
 import RagSaveCardPanel from './RagSaveCardPanel.vue'
 
 const rag = useRagWorkspace()
-const knowledgeBaseOptions = computed(() =>
-  rag.knowledgeBases.value.map((base) => ({
-    value: base.id,
-    label: base.name,
-  })),
-)
+
 
 function splitMessageContent(content: string): string[] {
   return content.split('\n').filter(Boolean)
@@ -26,16 +19,12 @@ function sourceTypeLabel(sourceType: string): string {
 <template>
   <section class="mode-workspace rag-workspace" aria-label="RAG 工作区">
     <div class="rag-control-strip">
-      <label>
-        知识库
-        <PillSelect
-          v-model="rag.selectedKnowledgeBaseId.value"
-          label="知识库"
-          :options="knowledgeBaseOptions"
-          placeholder="请选择"
-          :disabled="rag.isLoadingBases.value || rag.isAsking.value"
-        />
-      </label>
+      <div class="rag-kb-picker">
+        <button type="button" class="rag-library-toggle" :disabled="rag.isLoadingBases.value || rag.isAsking.value" @click="rag.toggleQaLibraryPicker">
+          <DatabaseZap :size="14" />
+          {{ rag.selectedKnowledgeBases.value.length ? `知识库 ${rag.selectedKnowledgeBases.value.length} 已选` : '选择知识库' }}
+        </button>
+      </div>
       <label>
         Top K
         <input v-model.number="rag.topK.value" type="number" min="1" max="8" :disabled="rag.isAsking.value" />
@@ -44,11 +33,25 @@ function sourceTypeLabel(sourceType: string): string {
         <BookMarked :size="14" />
         {{ rag.selectedQaLibraries.value.length ? `问答库 ${rag.selectedQaLibraries.value.length} 已选` : '选择问答库' }}
       </button>
-      <span>{{ rag.selectedKnowledgeBase.value?.description || '本地混合检索：知识库 + 问答库' }}</span>
+      <span>{{ rag.selectedKnowledgeBases.value.length ? `跨 ${rag.selectedKnowledgeBases.value.length} 个知识库联合检索` : '本地混合检索：知识库 + 问答库' }}</span>
     </div>
 
     <div v-if="rag.isQaLibraryPickerOpen.value" class="rag-qa-library-panel">
       <header>
+        <strong>选择知识库</strong>
+        <span>可多选，跨库联合检索</span>
+      </header>
+      <label v-for="base in rag.knowledgeBases.value" :key="base.id" class="rag-qa-library-option">
+        <input
+          type="checkbox"
+          :checked="rag.selectedKnowledgeBaseIds.value.includes(base.id)"
+          :disabled="rag.isAsking.value"
+          @change="rag.toggleKnowledgeBaseSelection(base.id)"
+        />
+        <span>{{ base.name }}</span>
+        <small>{{ base.description || '知识库' }}</small>
+      </label>
+      <header style="margin-top: 10px;">
         <strong>参与参考的问答库</strong>
         <span>可多选，适合加入高频标准答案与面试表达</span>
       </header>
