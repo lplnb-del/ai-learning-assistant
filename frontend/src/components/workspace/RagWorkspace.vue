@@ -11,7 +11,7 @@ function splitMessageContent(content: string): string[] {
 </script>
 
 <template>
-  <section class="mode-workspace" aria-label="RAG 工作区">
+  <section class="mode-workspace rag-workspace" aria-label="RAG 工作区">
     <div class="rag-control-strip">
       <label>
         知识库

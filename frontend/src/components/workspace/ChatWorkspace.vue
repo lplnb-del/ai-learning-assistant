@@ -23,7 +23,7 @@ const {
 </script>
 
 <template>
-  <section class="mode-workspace" aria-label="Chat 工作区">
+  <section class="mode-workspace chat-workspace" aria-label="Chat 工作区">
     <div class="message-stream">
       <article
         v-for="message in messages"

@@ -287,6 +287,14 @@ select:focus-visible {
   overflow-y: auto;
 }
 
+.chat-workspace .message-stream {
+  padding-bottom: 230px;
+}
+
+.rag-workspace .message-stream {
+  padding-top: 18px;
+}
+
 .message-stream::-webkit-scrollbar,
 .inspector-content::-webkit-scrollbar,
 .resource-scroll::-webkit-scrollbar {
@@ -392,7 +400,7 @@ select:focus-visible {
 .chat-control-strip {
   position: absolute;
   right: 50%;
-  bottom: 128px;
+  bottom: 190px;
   z-index: 21;
   display: flex;
   width: min(90%, 760px);
@@ -403,16 +411,15 @@ select:focus-visible {
 }
 
 .rag-control-strip {
-  position: absolute;
-  top: 14px;
-  right: 50%;
+  position: static;
   z-index: 21;
   display: flex;
   width: min(90%, 760px);
+  flex: 0 0 auto;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  transform: translateX(50%);
+  margin: 12px auto 0;
 }
 
 .rag-control-strip label,
@@ -1871,8 +1878,12 @@ select:focus-visible {
   }
 
   .chat-control-strip {
-    bottom: 132px;
+    bottom: 210px;
     width: calc(100% - 28px);
+  }
+
+  .chat-workspace .message-stream {
+    padding-bottom: 260px;
   }
 
   .resource-topbar,
