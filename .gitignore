@@ -31,8 +31,6 @@ vector_store/
 logs/
 *.log
 
-# Streamlit
-.streamlit/secrets.toml
 
 # Node / frontend build artifacts
 node_modules/

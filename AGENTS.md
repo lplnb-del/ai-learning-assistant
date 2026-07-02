@@ -14,15 +14,13 @@
 - 前端写法：Composition API + `<script setup lang="ts">`，组件使用 PascalCase，复杂状态抽到 composables / stores。
 - 后端主线：FastAPI + Python 服务层。
 - AI 编排：DeepSeek Gateway、LangChain / LangGraph、RAG、Agent Capability Layer 均放在后端。
-- Streamlit 不再作为正式 UI 主线；旧 UI 代码已清空，后续不要继续基于 Streamlit 开发正式界面。
 
 ## 项目结构
 
-- `frontend/`：正式 Vue 前端，目标一比一还原 `prototype/index.html`。
+- `frontend/`：正式 Vue 前端。
 - `src/ai_study_agent/api/`：FastAPI 应用、路由和请求/响应 schema。
 - `src/ai_study_agent/`：后端核心服务，包括 LLM、Knowledge、Ingestion、RAG、Cards、Agent。
 - `docs/`：项目核心文档，包含 PRD、系统架构、开发计划、UI 设计系统和简历材料。
-- `prototype/index.html`：当前高保真 UI 原型，是正式 Vue 前端的一比一视觉参考。
 - `tests/`：后端模型无关测试；前端测试后续放入 `frontend/src/**/__tests__/` 或 `frontend/tests/`。
 
 ## 产品边界
@@ -31,7 +29,7 @@
 - `Chat` 只提供普通云端大模型会话能力，可有联网搜索开关、思考深度、模型选择和会话历史；不暴露 Skills、MCP、SubAgent 或知识库选择。
 - `RAG` 只围绕知识库问答、检索参数、来源片段和问答卡片；不暴露通用 Skills、MCP、SubAgent。
 - `Agent` 才开放学习角色 SubAgent、学习 Skills 和多步骤任务编排；取消 cowork、云端/本地工作场景入口，聚焦教育专家、面试官、出题教练、总结教练等可选角色模式。
-- UI 实现以 `docs/新UI设计系统.md` 和 `prototype/index.html` 为准；正式实现必须移除原型 CDN 依赖。
+- UI 实现以 `docs/新UI设计系统.md` 为准；正式实现必须移除原型 CDN 依赖。
 
 ## 工程规则
 

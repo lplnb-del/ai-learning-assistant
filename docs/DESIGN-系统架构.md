@@ -4,7 +4,7 @@
 
 全能学习助理定位为“学习型 AI 知识工作台”。新架构采用 **Vue 前端 + FastAPI 后端** 的前后端分离方式，目标同时满足：
 
-- 高保真还原 `prototype/index.html`。
+- 高保真 Vue 前端 UI 还原。
 - 支撑 Chat、RAG、Agent 三种严格区分的模式。
 - 让 DeepSeek、RAG、LangChain / LangGraph、Agent Capability Layer 都沉在后端。
 - 全面采用 LangChain 生态：LangChain TextSplitter、Chroma 向量库、LangChain Embeddings、LangChain Chat Model、LangGraph Agent 编排。

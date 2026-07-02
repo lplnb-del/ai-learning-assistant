@@ -3,9 +3,8 @@
 ## 1. 当前状态
 
 - 项目正式路线已重订为 **Vue 前端 + FastAPI 后端**。
-- 前端目标是一比一还原 `prototype/index.html`，不再用 Streamlit 作为正式 UI 主线。
+- 前端已完成 Vue 高保真 UI 还原。
 - 后端目标是提供 FastAPI 接口，承载 DeepSeek、RAG、Agent、知识库、存储和流式输出。
-- 已清空旧 Streamlit UI 代码。
 - 已完成 Milestone 0-4：Vue 前端基线、高保真静态工作台、FastAPI 后端基线、Chat 前后端垂直闭环。
 - Milestone 5 已完成基础闭环：SQLite 元数据表、知识库创建/列表/删除确认、Markdown/TXT/PDF/URL 导入、清洗切分、chunk 预览、索引准备入口和前端 API 接入。
 - Milestone 6 已完成第一条本地检索切片：RAG 页面可选择知识库、调整 Top K、使用固定演示问题提问并展示来源片段；后端已有可替换的本地 hashing embedding provider、JSON 持久化向量索引适配层和 cosine similarity 检索；无检索结果时会给出兜底提示；后续继续把适配层替换为 Chroma 并接入模型生成。
@@ -72,7 +71,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - Vue 更适合一比一还原高保真原型。
 - FastAPI 更适合承载 AI 服务、密钥、文件处理、RAG 和 Agent。
 - 前端不直接接触模型 Key，安全边界清晰。
-- 该架构比 Streamlit 更接近正式 AI 产品工程。
+- 该架构适合正式 AI 产品工程。
 
 ## 4. 产品边界
 
@@ -155,7 +154,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 
 任务：
 
-- [x] 拆解 `prototype/index.html` 的布局、样式和交互。
+- [x] 拆解 UI 布局、样式和交互。
 - [x] 实现 `AppShell`。
 - [x] 实现 `SidebarNav`。
 - [x] 实现 `ModeTabs`。
@@ -172,7 +171,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 验收：
 
 - 不接后端也能看出完整产品形态。
-- 视觉上接近 `prototype/index.html`。
+- 视觉上接近设计稿。
 - Chat 不展示知识库、Skills、MCP、SubAgent。
 - RAG 不展示通用 Skills、MCP、SubAgent。
 - Agent 展示学习角色 SubAgent、学习 Skills、任务步骤和执行日志，不展示 cowork、云端/本地场景。
@@ -355,7 +354,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 
 1. `docs: reset architecture to vue fastapi`
 2. `chore: scaffold vue frontend`
-3. `feat: recreate prototype shell in vue`
+3. `feat: recreate UI shell in vue`
 4. `feat: add fastapi backend shell`
 5. `feat: connect vue chat to fastapi stream`
 6. `feat: add knowledge ingestion pipeline`
@@ -379,6 +378,6 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 3. 读取 `docs/PRD-全能学习助理.md`。
 4. 读取 `docs/DESIGN-系统架构.md`。
 5. 读取 `docs/DEVELOP_PLAN-开发计划.md`。
-6. 查看 `prototype/index.html`，确认 UI 视觉基准。
+6. 查看 docs 新UI设计系统，确认 UI 视觉基准。
 7. 执行 `git status --short`，确认当前工作区。
 8. 从 Milestone 1：Vue 前端工程初始化开始实现。
