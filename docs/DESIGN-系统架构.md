@@ -14,7 +14,7 @@
 
 - Chat 不调用 Skills/MCP/SubAgent，只提供联网搜索、思考深度、模型与会话设置。
 - RAG 不调用通用 Skills/MCP/SubAgent，只围绕知识库、检索参数和来源片段。
-- Agent 才开放 Skills/MCP/SubAgent、深度研究、cowork、云端/本地工作场景。
+- Agent 才开放学习角色 SubAgent、学习 Skills 和多步骤任务编排；MCP 作为后端扩展能力，不作为当前核心入口；取消 cowork、云端/本地工作场景。
 
 ## 2. High-level Architecture
 
@@ -317,5 +317,5 @@ SQLite 保存元数据；Chroma 保存向量索引；文件原文存本地受控
 6. **RAG 闭环**：Embedding、Chroma、检索、回答、来源片段。
 7. **Cards 闭环**：保存问答、翻牌、掌握程度。
 8. **Agent 能力层**：Skills、MCP、SubAgent registry。
-9. **Agent 编排**：LangGraph 状态图、深度研究、cowork。
+9. **Agent 编排**：LangGraph 状态图、角色选择、任务拆解和步骤跟踪。
 10. **工程化交付**：截图、演示脚本、README、简历证据。

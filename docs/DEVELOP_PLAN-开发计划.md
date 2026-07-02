@@ -76,7 +76,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 
 - `Chat`：普通云端大模型会话，可有联网搜索开关、思考深度、模型选择和会话历史；不暴露 Skills、MCP、SubAgent 或知识库选择。
 - `RAG`：围绕知识库问答、检索参数、来源片段和问答卡片；不暴露通用 Skills、MCP、SubAgent。
-- `Agent`：开放 Skills、MCP、SubAgent、深度研究、cowork、云端/本地工作场景和多步骤任务编排。
+- `Agent`：开放学习角色 SubAgent、学习 Skills 和多步骤任务编排；取消 cowork、云端/本地工作场景入口，聚焦教育专家、面试官、出题教练、总结教练等可选角色模式。
 
 ## 5. Definition of Done
 
@@ -89,7 +89,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - 支持 Markdown/TXT/PDF，URL 导入作为增强项。
 - 支持基于知识库问答并展示来源片段。
 - 支持问答卡片保存、翻牌和掌握程度标记。
-- Agent 支持 Skills/MCP/SubAgent、深度研究、cowork、云端/本地工作场景。
+- Agent 支持学习角色 SubAgent、学习 Skills、任务拆解、步骤跟踪和结果汇总。
 - 有 README、架构图、演示截图、典型演示脚本和可复现运行方式。
 
 ## 6. 默认决策
@@ -100,8 +100,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - 问答卡片策略：先做掌握程度标记，不做复杂间隔重复算法。
 - Chat 联网搜索：第一版先做 UI 开关和接口桩。
 - 思考深度：第一版映射到 prompt 策略和 max token，不绑定模型私有能力。
-- Agent 深度研究：第一版优先复用 RAG 知识库和已有资料。
-- 本地工作场景：第一版只做 UI 与权限提示，不默认读取本地文件。
+- Agent 角色模式：第一版优先实现教育专家和面试官，并复用 RAG 知识库和已有资料。
 - 第一批 Skills：总结、解释、出题、生成问答卡片。
 - 第一批 SubAgent：教育专家和面试官优先。
 
@@ -174,7 +173,7 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - 视觉上接近 `prototype/index.html`。
 - Chat 不展示知识库、Skills、MCP、SubAgent。
 - RAG 不展示通用 Skills、MCP、SubAgent。
-- Agent 展示 Skills、MCP、SubAgent、深度研究、cowork、云端/本地场景。
+- Agent 展示学习角色 SubAgent、学习 Skills、任务步骤和执行日志，不展示 cowork、云端/本地场景。
 
 ## 10. Milestone 3：FastAPI 后端工程基线
 
@@ -312,8 +311,8 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - [ ] 任务步骤状态：pending、running、done、failed。
 - [ ] Agent 可调用 Capability Layer。
 - [ ] Agent 可组合 RAG、Skills、MCP、SubAgent。
-- [ ] Agent 支持普通任务、深度研究、cowork。
-- [ ] Agent 支持云端、本地工作场景。
+- [ ] Agent 支持学习规划、模拟面试、出题练习、资料总结等学习任务。
+- [ ] Agent 支持选择教育专家、面试官、出题教练、总结教练等角色模式。
 - [ ] Agent 页面展示计划、执行过程、工具调用、观察结果和最终汇总。
 
 ## 17. Milestone 10：工程化与简历交付

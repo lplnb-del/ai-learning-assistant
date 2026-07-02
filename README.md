@@ -15,7 +15,7 @@
 
 - `Chat`：普通云端大模型会话，可包含联网搜索开关、思考深度、模型选择和会话历史；不暴露 Skills、MCP、SubAgent 或知识库选择。
 - `RAG`：围绕知识库问答、检索参数、来源片段和问答卡片；不暴露通用 Skills、MCP、SubAgent。
-- `Agent`：开放 Skills、MCP、SubAgent、深度研究、cowork、云端/本地工作场景和多步骤任务编排。
+- `Agent`：开放学习角色 SubAgent、学习 Skills 和多步骤任务编排；取消 cowork、云端/本地工作场景入口，聚焦教育专家、面试官、出题教练、总结教练等可选角色模式。
 
 ## 技术栈
 

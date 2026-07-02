@@ -4,7 +4,6 @@ import {
   BookOpenCheck,
   BrainCircuit,
   BrainCog,
-  Cloud,
   Database,
   Globe,
   Layers,
@@ -195,8 +194,8 @@ export const modeSettings = {
     { label: 'Top K: 3', icon: Database },
   ],
   agent: [
-    { label: '深度研究模式', icon: Workflow },
     { label: '教育专家', icon: UserCog },
-    { label: '云端沙箱', icon: Cloud },
+    { label: '面试官', icon: MessageCircleQuestion },
+    { label: '出题教练', icon: Workflow },
   ],
 } satisfies Record<WorkMode, Array<{ label: string; icon: typeof Library }>>
