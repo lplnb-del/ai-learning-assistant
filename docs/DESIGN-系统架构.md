@@ -51,6 +51,7 @@ flowchart TD
 
     CARDAPI --> CARDS["QA Card Service"]
     CARDS --> DB
+    CARDS --> KNOW
 
     AGENTAPI --> ORCH["Agent Orchestrator"]
     ORCH --> LC["LangChain / LangGraph"]
@@ -197,6 +198,11 @@ API 边界：
 - `GET /api/knowledge-bases/{id}/chunks`：切分预览。
 - `POST /api/rag/query`：RAG 问答。
 - `POST /api/cards`：保存问答卡片。
+- `POST /api/cards/libraries`：创建问答库。
+- `GET /api/cards/libraries`：列出问答库。
+- `POST /api/cards/generate-from-chunks`：从 chunks 批量生成问答卡片。
+- `POST /api/cards/generate-from-document`：从文档批量生成问答卡片。
+- `PATCH /api/cards/{id}/mastery`：更新卡片掌握程度。
 - `POST /api/agents/run`：Agent 任务启动。
 - `GET /api/agents/{run_id}/events`：Agent SSE 事件。
 
@@ -255,7 +261,35 @@ sequenceDiagram
     API-->>FE: answer + sources
 ```
 
-### 6.4 Agent Flow
+### 6.4 Card Generation Flow
+
+```mermaid
+sequenceDiagram
+    participant FE as Vue CardsGeneratePanel
+    participant API as FastAPI Cards Router
+    participant Cards as Card Service
+    participant Know as Knowledge Repository
+    participant LLM as LLM Gateway
+    participant DB as SQLite
+
+    FE->>API: POST /api/cards/generate-from-document
+    API->>Cards: generate_cards_from_document()
+    Cards->>Know: list_chunks(document_id)
+    Know-->>Cards: chunks[]
+    Cards->>LLM: generate Q&A pairs from chunks
+    LLM-->>Cards: qa_pairs[]
+    Cards->>DB: bulk insert qa_cards
+    Cards-->>API: created cards[]
+    API-->>FE: CardGenerateResponse
+```
+
+知识库与问答库的打通关系：
+
+- **正向生成**：从知识库文档/切片 → 自动生成问答卡片 → 保存到指定问答库
+- **来源追溯**：每张卡片通过 `source_chunk_ids` 记录来源切片，通过 `knowledge_base_id` 记录来源知识库
+- **RAG 混合检索**：RAG 问答时可同时参考知识库 chunks 和问答库卡片，形成 `local_vector_index+qa_library_hybrid` 检索模式
+
+### 6.5 Agent Flow
 
 ```mermaid
 sequenceDiagram
@@ -279,6 +313,7 @@ sequenceDiagram
 - `chunks`
 - `conversations`
 - `messages`
+- `qa_libraries`
 - `qa_cards`
 - `agent_runs`
 - `agent_steps`
