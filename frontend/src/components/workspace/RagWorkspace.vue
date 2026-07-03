@@ -68,16 +68,10 @@ function sourceTypeLabel(sourceType: string): string {
     </div>
 
     <div class="message-stream">
-      <div class="rag-demo-questions" aria-label="RAG 演示问题">
-        <button
-          v-for="question in rag.demoQuestions"
-          :key="question"
-          type="button"
-          :disabled="rag.isAsking.value"
-          @click="rag.useDemoQuestion(question)"
-        >
-          {{ question }}
-        </button>
+      <div v-if="!rag.messages.value.length && !rag.isAsking.value && !rag.errorMessage.value" class="workspace-empty">
+        <Library :size="30" aria-hidden="true" />
+        <h2>从真实资料开始提问</h2>
+        <p>先选择知识库，再输入问题。回答、来源片段和保存入口都会在这里出现。</p>
       </div>
 
       <p v-if="rag.errorMessage.value" class="chat-error">

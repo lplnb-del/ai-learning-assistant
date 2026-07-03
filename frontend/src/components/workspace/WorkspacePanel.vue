@@ -13,12 +13,17 @@ defineProps<Props>()
 
 const emit = defineEmits<{
   selectMode: [mode: WorkMode]
+  createConversation: []
 }>()
 </script>
 
 <template>
   <section class="workspace-surface" aria-label="AI 推理台">
-    <ModeTopBar :active-mode="activeMode" @select-mode="emit('selectMode', $event)" />
+    <ModeTopBar
+      :active-mode="activeMode"
+      @select-mode="emit('selectMode', $event)"
+      @create-conversation="emit('createConversation')"
+    />
     <ChatWorkspace v-if="activeMode === 'chat'" />
     <RagWorkspace v-else-if="activeMode === 'rag'" />
     <AgentWorkspace v-else />

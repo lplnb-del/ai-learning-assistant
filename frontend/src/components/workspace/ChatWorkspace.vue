@@ -16,21 +16,23 @@ const {
   webSearch,
   canSubmit,
   lastAssistantStatus,
+  availableModels,
   submit,
   setThinkingDepth,
   toggleKeepContext,
   toggleWebSearch,
 } = useChatStream()
-
-const modelOptions = [
-  { value: 'deepseek-v4-flash', label: 'deepseek-v4-flash' },
-  { value: 'deepseek-chat', label: 'deepseek-chat' },
-]
 </script>
 
 <template>
   <section class="mode-workspace chat-workspace" aria-label="Chat 工作区">
     <div class="message-stream">
+      <div v-if="!messages.length && !isStreaming && !errorMessage" class="workspace-empty">
+        <Sparkles :size="30" aria-hidden="true" />
+        <h2>开始一段新对话</h2>
+        <p>输入你的问题，模型回复会从这里开始累计。</p>
+      </div>
+
       <article
         v-for="message in messages"
         :key="message.id"
@@ -65,7 +67,7 @@ const modelOptions = [
     <div class="chat-control-strip" aria-label="Chat 设置">
       <label>
         <span>模型</span>
-        <PillSelect v-model="model" label="模型" :options="modelOptions" :disabled="isStreaming" />
+        <PillSelect v-model="model" label="模型" :options="availableModels" :disabled="isStreaming" />
       </label>
       <div class="segmented-control" aria-label="思考深度">
         <button

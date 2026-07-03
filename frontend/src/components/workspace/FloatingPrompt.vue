@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUp, BookOpen, Mic, Paperclip, Plug, Wrench } from '@lucide/vue'
+import { ArrowUp, BookOpen, Mic, Paperclip } from '@lucide/vue'
 import type { WorkMode } from '../../types/workspace'
 
 interface Props {
@@ -43,10 +43,7 @@ const placeholders: Record<WorkMode, string> = {
           <template v-else-if="mode === 'rag'">
             <button type="button" aria-label="查阅全库文档"><BookOpen :size="20" /></button>
           </template>
-          <template v-else>
-            <button class="prompt-chip" type="button"><Plug :size="16" />MCP Tools</button>
-            <button class="prompt-chip" type="button"><Wrench :size="16" />Skills</button>
-          </template>
+          <template v-else></template>
         </div>
 
         <button class="send-button" type="button" aria-label="发送" :disabled="!props.canSubmit" @click="emit('submit')">

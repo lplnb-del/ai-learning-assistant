@@ -12,11 +12,13 @@ interface Props {
   options: PillSelectOption[]
   placeholder?: string
   disabled?: boolean
+  variant?: 'toolbar' | 'field'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: '请选择',
   disabled: false,
+  variant: 'toolbar',
 })
 
 const model = defineModel<string>({ required: true })
@@ -83,7 +85,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="root" class="pill-select" :class="{ 'pill-select-open': isOpen, 'pill-select-disabled': disabled }">
+  <div
+    ref="root"
+    class="pill-select"
+    :class="[`pill-select-${variant}`, { 'pill-select-open': isOpen, 'pill-select-disabled': disabled }]"
+  >
     <button
       class="pill-select-trigger"
       type="button"
@@ -140,6 +146,30 @@ onUnmounted(() => {
     transform var(--motion-micro) var(--ease-standard);
 }
 
+.pill-select-field {
+  width: 100%;
+}
+
+.pill-select-field .pill-select-trigger {
+  width: 100%;
+  max-width: none;
+  min-height: 42px;
+  justify-content: space-between;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 14px;
+  padding: 0 14px;
+  background: color-mix(in srgb, var(--color-input-bg) 92%, transparent);
+  color: var(--color-text-primary);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 4%, transparent);
+}
+
+.pill-select-field.pill-select-open .pill-select-trigger,
+.pill-select-field .pill-select-trigger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-accent-text) 24%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent-text) 8%, transparent);
+}
+
 .pill-select-label {
   overflow: hidden;
   min-width: 0;
@@ -182,6 +212,14 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
   backdrop-filter: blur(18px);
+}
+
+.pill-select-field .pill-select-menu {
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 100%;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-surface-elevated, var(--color-surface)) 96%, transparent);
 }
 
 .pill-select-option {

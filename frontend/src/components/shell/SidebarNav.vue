@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { GraduationCap, Moon, SlidersHorizontal, Sun } from '@lucide/vue'
 import { computed } from 'vue'
-import type { MainView, NavItem } from '../../types/workspace'
+import ConversationDock from '../history/ConversationDock.vue'
+import type { ConversationSession } from '../../types/conversations'
+import type { MainView, NavItem, WorkMode } from '../../types/workspace'
 
 interface Props {
   items: NavItem[]
   activeView: MainView
+  activeMode: WorkMode
+  activeConversationId: string
+  conversations: readonly ConversationSession[]
   resolvedTheme: 'light' | 'dark'
 }
 
@@ -13,6 +18,13 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   selectView: [view: MainView]
+  openSettings: []
+  openHistory: []
+  createConversation: []
+  selectConversation: [sessionId: string]
+  togglePinnedConversation: [sessionId: string]
+  deleteConversation: [sessionId: string]
+  requestRenameConversation: [session: ConversationSession]
   toggleTheme: []
 }>()
 
@@ -57,11 +69,23 @@ const resourceItems = computed(() => props.items.filter((item) => item.group ===
           <span>{{ item.label }}</span>
         </button>
       </nav>
+
+      <ConversationDock
+        :mode="activeMode"
+        :conversations="conversations"
+        :active-conversation-id="activeConversationId"
+        @open-overlay="emit('openHistory')"
+        @create-conversation="emit('createConversation')"
+        @select-conversation="emit('selectConversation', $event)"
+        @toggle-pinned="emit('togglePinnedConversation', $event)"
+        @delete-conversation="emit('deleteConversation', $event)"
+        @request-rename-conversation="emit('requestRenameConversation', $event)"
+      />
     </div>
 
     <div class="sidebar-footer">
       <div class="footer-actions">
-        <button class="nav-item footer-settings" type="button" @click="emit('selectView', 'settings')">
+        <button class="nav-item footer-settings" type="button" @click="emit('openSettings')">
           <SlidersHorizontal :size="18" aria-hidden="true" />
           <span>偏好设置</span>
         </button>
@@ -72,7 +96,7 @@ const resourceItems = computed(() => props.items.filter((item) => item.group ===
       </div>
       <div class="service-status">
         <span class="status-dot" aria-hidden="true"></span>
-        <span>DeepSeek 在线</span>
+        <span>模型服务可用</span>
       </div>
     </div>
   </aside>

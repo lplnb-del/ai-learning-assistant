@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Check, FileText, Globe, History, Info, Settings2, TextQuote } from '@lucide/vue'
-import { chatSources, ragSources } from '../../mock/workspace'
+import { BookMarked, Bot, Info, SearchX } from '@lucide/vue'
 import type { WorkMode } from '../../types/workspace'
 
 interface Props {
@@ -20,71 +19,27 @@ defineProps<Props>()
     </header>
 
     <div v-if="activeMode === 'chat'" class="inspector-content">
-      <section class="inspector-section">
-        <p class="section-label">当前会话状态</p>
-        <div class="metric-card">
-          <span>模型</span><strong>DeepSeek-V3</strong>
-          <span>消耗 Tokens</span><strong>1,248</strong>
-          <span>ID</span><code>cht_8f2a9x</code>
-        </div>
-      </section>
-
-      <section class="inspector-section">
-        <p class="section-label"><Globe :size="14" />联网来源 (3)</p>
-        <article v-for="source in chatSources" :key="source.id" class="source-card">
-          <strong>{{ source.title }}</strong>
-          <span>{{ source.source }}</span>
-          <p>{{ source.excerpt }}</p>
-        </article>
-      </section>
+      <div class="inspector-empty">
+        <Bot :size="22" aria-hidden="true" />
+        <strong>暂无会话调试信息</strong>
+        <p>开始一次真实对话后，这里再展示模型状态和上下文摘要。</p>
+      </div>
     </div>
 
     <div v-else-if="activeMode === 'rag'" class="inspector-content">
-      <section class="inspector-section">
-        <p class="section-label section-between">检索策略 <Settings2 :size="14" /></p>
-        <div class="metric-card">
-          <span>Top K</span><strong>3 个片段</strong>
-          <span>Rerank 重排</span><strong class="success-text">BGE-Reranker</strong>
-        </div>
-      </section>
-
-      <section class="inspector-section">
-        <p class="section-label"><TextQuote :size="14" />引用来源 (2)</p>
-        <article v-for="source in ragSources" :key="source.id" class="chunk-card">
-          <div class="chunk-header">
-            <span><FileText :size="13" />{{ source.title }}</span>
-            <strong>{{ source.score }}</strong>
-          </div>
-          <p>{{ source.excerpt }}</p>
-          <footer><code>{{ source.source }}</code><mark>{{ source.marker }}</mark></footer>
-        </article>
-      </section>
+      <div class="inspector-empty">
+        <SearchX :size="22" aria-hidden="true" />
+        <strong>暂无检索调试信息</strong>
+        <p>选择知识库并提交问题后，这里再展示真实检索摘要与来源概览。</p>
+      </div>
     </div>
 
     <div v-else class="inspector-content">
-      <section class="inspector-section">
-        <p class="section-label">编排器状态</p>
-        <pre class="json-card">{"status":"running"}
-{
-  "current_node": "subagent_educator",
-  "steps_completed": 3,
-  "tools_called": ["rag_search", "web_search"]
-}</pre>
-      </section>
-
-      <section class="inspector-section">
-        <p class="section-label"><History :size="14" />工具执行日志</p>
-        <div class="tool-log">
-          <article>
-            <Check :size="13" />
-            <div><strong>WebSearch: LangChain LCEL</strong><span>获取到 4620 tokens 网页文本内容</span></div>
-          </article>
-          <article>
-            <Check :size="13" />
-            <div><strong>RAG: Backend Guide</strong><span>成功检索，置信度得分 0.89</span></div>
-          </article>
-        </div>
-      </section>
+      <div class="inspector-empty">
+        <BookMarked :size="22" aria-hidden="true" />
+        <strong>暂无 Agent 编排日志</strong>
+        <p>当前版本先提供技能执行结果，多步骤编排监控会在后续里程碑补齐。</p>
+      </div>
     </div>
   </aside>
 </template>
