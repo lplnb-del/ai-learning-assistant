@@ -7,6 +7,8 @@ from starlette import status
 
 from ai_study_agent.api.errors import ApiError
 from ai_study_agent.api.schemas.agents import (
+    AgentRespondRequest,
+    AgentRespondResponse,
     CapabilityResponse,
     SkillRunRequest,
     SkillRunResponse,
@@ -54,6 +56,28 @@ def run_skill(skill_id: str, request: SkillRunRequest) -> SkillRunResponse:
     return SkillRunResponse(
         skill_id=result.skill_id,
         skill_name=result.skill_name,
+        input_text=result.input_text,
+        output=result.output,
+        context_used=result.context_used,
+    )
+
+
+@router.post("/respond", response_model=AgentRespondResponse, status_code=status.HTTP_200_OK)
+def respond(request: AgentRespondRequest) -> AgentRespondResponse:
+    service = build_service()
+    try:
+        result = service.respond(
+            input_text=request.input_text,
+            knowledge_base_id=request.knowledge_base_id,
+            top_k=request.top_k,
+            role_id=request.role_id,
+        )
+    except AgentServiceError as exc:
+        raise ApiError("agent_error", str(exc), status_code=status.HTTP_400_BAD_REQUEST) from exc
+
+    return AgentRespondResponse(
+        role_id=result.role_id,
+        role_name=result.role_name,
         input_text=result.input_text,
         output=result.output,
         context_used=result.context_used,

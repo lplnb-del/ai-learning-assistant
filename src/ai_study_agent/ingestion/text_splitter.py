@@ -5,9 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-
 SUPPORTED_CONTENT_TYPES = {"text/markdown", "text/plain"}
-
 
 @dataclass(frozen=True)
 class TextChunkDraft:
@@ -15,7 +13,6 @@ class TextChunkDraft:
     text: str
     title: str | None
     metadata: dict[str, str]
-
 
 def normalize_content_type(content_type: str, file_name: str = "") -> str:
     lowered = content_type.strip().lower()
@@ -28,13 +25,11 @@ def normalize_content_type(content_type: str, file_name: str = "") -> str:
         return "text/plain"
     return lowered or "text/plain"
 
-
 def clean_text(text: str) -> str:
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     normalized = re.sub(r"[ \t]+", " ", normalized)
     normalized = re.sub(r"\n{3,}", "\n\n", normalized)
     return normalized.strip()
-
 
 def split_text(text: str, *, chunk_size: int = 800, chunk_overlap: int = 120) -> list[TextChunkDraft]:
     if chunk_size < 200:
@@ -48,77 +43,64 @@ def split_text(text: str, *, chunk_size: int = 800, chunk_overlap: int = 120) ->
     if not cleaned:
         return []
 
-    sections = _split_into_sections(cleaned)
+    from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    
+    # Extract headers first
+    markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+    md_header_splits = markdown_splitter.split_text(cleaned)
+
+    # Then split recursively
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=["\n\n", "\n", " ", ""],
+        add_start_index=True
+    )
+    
+    splits = text_splitter.split_documents(md_header_splits)
+
     chunks: list[TextChunkDraft] = []
-    current_text = ""
-    current_title: str | None = None
+    
+    # Since we need char_start and char_end for backward compatibility
+    # We will search the chunk in the original cleaned text to get approximate indices
+    last_idx = 0
+    
+    for i, doc in enumerate(splits):
+        # Determine the title from metadata extracted by MarkdownHeaderTextSplitter
+        title = None
+        for header_key in ["Header 3", "Header 2", "Header 1"]:
+            if header_key in doc.metadata:
+                title = doc.metadata[header_key]
+                break
+                
+        chunk_text = doc.page_content.strip()
+        
+        char_start = doc.metadata.get("start_index", cleaned.find(chunk_text, last_idx))
+        if char_start == -1:
+            char_start = cleaned.find(chunk_text)
+            if char_start == -1:
+                char_start = last_idx
+        
+        char_end = char_start + len(chunk_text)
+        last_idx = max(char_start, 0)
+        
+        metadata = {str(k): str(v) for k, v in doc.metadata.items()}
+        metadata["char_start"] = str(char_start)
+        metadata["char_end"] = str(char_end)
 
-    for title, paragraph in sections:
-        candidate = paragraph if not current_text else f"{current_text}\n\n{paragraph}"
-        if len(candidate) <= chunk_size:
-            current_text = candidate
-            current_title = current_title or title
-            continue
-        if current_text:
-            chunks.extend(_window_chunk(current_text, current_title, chunk_size, chunk_overlap, len(chunks)))
-        current_text = paragraph
-        current_title = title
-
-    if current_text:
-        chunks.extend(_window_chunk(current_text, current_title, chunk_size, chunk_overlap, len(chunks)))
-
-    return chunks
-
-
-def _split_into_sections(text: str) -> list[tuple[str | None, str]]:
-    title: str | None = None
-    sections: list[tuple[str | None, str]] = []
-    buffer: list[str] = []
-
-    for block in text.split("\n\n"):
-        heading = _extract_heading(block)
-        if heading:
-            if buffer:
-                sections.append((title, "\n\n".join(buffer).strip()))
-                buffer = []
-            title = heading
-        buffer.append(block.strip())
-
-    if buffer:
-        sections.append((title, "\n\n".join(buffer).strip()))
-    return [(item_title, body) for item_title, body in sections if body]
-
-
-def _extract_heading(block: str) -> str | None:
-    first_line = block.splitlines()[0].strip()
-    match = re.match(r"^(#{1,6})\s+(.+)$", first_line)
-    return match.group(2).strip() if match else None
-
-
-def _window_chunk(
-    text: str,
-    title: str | None,
-    chunk_size: int,
-    chunk_overlap: int,
-    start_index: int,
-) -> list[TextChunkDraft]:
-    chunks: list[TextChunkDraft] = []
-    cursor = 0
-    index = start_index
-    while cursor < len(text):
-        end = min(cursor + chunk_size, len(text))
-        chunk_text = text[cursor:end].strip()
-        if chunk_text:
-            chunks.append(
-                TextChunkDraft(
-                    index=index,
-                    text=chunk_text,
-                    title=title,
-                    metadata={"char_start": str(cursor), "char_end": str(end)},
-                )
+        chunks.append(
+            TextChunkDraft(
+                index=i,
+                text=chunk_text,
+                title=title,
+                metadata=metadata,
             )
-            index += 1
-        if end >= len(text):
-            break
-        cursor = max(end - chunk_overlap, cursor + 1)
+        )
+
     return chunks

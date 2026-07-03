@@ -38,3 +38,18 @@ class SkillRunResponse(BaseModel):
     input_text: str
     output: str
     context_used: bool
+
+
+class AgentRespondRequest(BaseModel):
+    input_text: str = Field(min_length=1, max_length=10000)
+    knowledge_base_id: str | None = Field(default=None, max_length=120)
+    top_k: int = Field(default=3, ge=1, le=8)
+    role_id: str | None = Field(default=None, max_length=80)
+
+
+class AgentRespondResponse(BaseModel):
+    role_id: str
+    role_name: str
+    input_text: str
+    output: str
+    context_used: bool

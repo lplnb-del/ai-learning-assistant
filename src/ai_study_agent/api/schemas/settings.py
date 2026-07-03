@@ -30,6 +30,76 @@ class SettingsResponse(BaseModel):
     embedding_base_url: str | None
 
 
+class SubAgentRoleConfig(BaseModel):
+    id: str
+    name: str
+    title: str
+    description: str
+    system_prompt: str
+    greeting: str
+    preferred_skills: list[str]
+    tags: list[str]
+
+
+class SubAgentRoleUpsertRequest(BaseModel):
+    id: str | None = Field(default=None, max_length=80)
+    name: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=1, max_length=120)
+    description: str = Field(default="", max_length=500)
+    system_prompt: str = Field(min_length=1, max_length=12000)
+    greeting: str = Field(default="", max_length=500)
+    preferred_skills: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+
+
+class SubAgentPromptGenerateRequest(BaseModel):
+    role_name: str = Field(min_length=1, max_length=80)
+    mission: str = Field(min_length=1, max_length=600)
+
+
+class SubAgentPromptGenerateResponse(BaseModel):
+    system_prompt: str
+    greeting: str
+
+
+class McpServerConfig(BaseModel):
+    id: str
+    name: str
+    description: str
+    command: str
+    enabled: bool
+
+
+class McpServerUpsertRequest(BaseModel):
+    id: str | None = Field(default=None, max_length=80)
+    name: str = Field(min_length=1, max_length=80)
+    description: str = Field(default="", max_length=300)
+    command: str = Field(default="", max_length=300)
+    enabled: bool = Field(default=False)
+
+
+class SkillConfigResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    enabled: bool
+    tags: list[str]
+    source: str
+
+
+class SkillConfigUpsertRequest(BaseModel):
+    id: str | None = Field(default=None, max_length=80)
+    name: str = Field(min_length=1, max_length=80)
+    description: str = Field(default="", max_length=300)
+    enabled: bool = Field(default=True)
+    tags: list[str] = Field(default_factory=list)
+    source: str = Field(default="custom", max_length=120)
+
+
+class SkillConfigToggleRequest(BaseModel):
+    enabled: bool
+
+
 class ModelDetectionRequest(BaseModel):
     """Request to detect available models.
 
