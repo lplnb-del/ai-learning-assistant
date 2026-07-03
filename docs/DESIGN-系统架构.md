@@ -214,6 +214,9 @@ API 边界：
 - `PUT /api/settings/embedding-model`：更新嵌入模型配置。
 - `GET /api/settings/presets`：获取 OpenAI 兼容预设服务列表。
 - `POST /api/settings/detect-models`：自动检测可用模型。
+- `GET /api/settings/subagents` / `POST /api/settings/subagents`：读取与保存学习角色配置。
+- `GET /api/settings/mcp-servers` / `POST /api/settings/mcp-servers`：读取与保存 MCP 服务配置。
+- `GET /api/settings/skills` / `POST /api/settings/skills`：读取与保存工作台 Skills（如 `pdf`、`ppt`、`doc`）。
 - `GET /api/agents/{run_id}/events`：Agent SSE 事件。
 
 ## 6. Data Flow

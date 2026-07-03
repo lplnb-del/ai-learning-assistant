@@ -9,6 +9,7 @@
 - Milestone 5 已完成基础闭环：SQLite 元数据表、知识库创建/列表/删除确认、Markdown/TXT/PDF/URL 导入、清洗切分、chunk 预览、索引准备入口和前端 API 接入。
 - Milestone 6 已完成 RAG 检索闭环：支持多知识库联合检索、Chroma 向量检索（LangChain）+ 本地 JSON fallback + 问答库混合检索、Top K、来源片段展示和问答卡片保存。当前 RAG 回答基于 prompt 组装和本地拼接，LLM 生成回答待接入。
 - Milestone 7 已升级为“问答库 + 卡片”基础闭环：后端提供 `qa_libraries`、`qa_cards` SQLite 存储、问答库创建/列表/删除、卡片创建/列表/删除、掌握程度更新和按问答库/知识库/标签/掌握程度筛选；前端 QA 卡片页接入真实 API，支持按问答库管理卡片、手动创建、点击翻牌、掌握程度标记和删除；RAG 回答可选择参考问答库，并保存到指定问答库或在保存时直接新建问答库。
+- 当前设置中心已接入模型、SubAgent、MCP 与工作台 Skills 的基础配置能力，但 `MCP / Skills` 仍属于过渡实现：偏向表单式录入，尚未升级为“包/市场/安装源”驱动的专业接入方式。
 
 ## 2. 技术栈
 
@@ -104,6 +105,20 @@ DeepSeek + SQLite + Chroma + LangChain/LangGraph
 - Agent 角色模式：第一版优先实现教育专家和面试官，并复用 RAG 知识库和已有资料。
 - 第一批 Skills：总结、解释、出题、生成问答卡片。
 - 第一批 SubAgent：教育专家和面试官优先。
+- MCP 默认形态：优先支持 `stdio` 本地服务与 `streamable-http` 远程服务，不再继续扩展私有协议。
+- 工作台 Skills 目标形态：采用“技能包”管理，而不是长期停留在手工填写名称/描述；优先支持目录包与压缩包导入，后续补充市场源与版本管理。
+
+## 6.1 MCP / Skills 升级方向
+
+调研结论对应的工程目标：
+
+- `MCP` 参考 Claude Code / MCP 官方做法，区分 user scope、project scope 和 managed scope；项目级配置优先落到仓库内可追踪文件，而不是只存在数据库字段里。
+- `MCP` 传输层只保留标准协议：本地 `stdio`，远程 `streamable-http`；`SSE` 仅兼容旧服务，不作为主推方案。
+- `MCP` 配置界面应从“手填三四个字段”升级为“安装源 + 配置预览 + 健康检查 + 启停 + 权限提示”。
+- `Skills` 参考 OpenAI Skills / Codex Plugins / Claude Skills / Dify 插件的共同模式，采用“manifest + instructions + assets/scripts”的包结构。
+- `Skills` 安装入口优先级：本地压缩包上传、目录导入、仓库/市场安装。
+- `Skills` 运行时要区分“已安装”“已启用”“当前会话可见”，避免把安装状态和启用状态混为一谈。
+- `SubAgent` 后续不再直接绑定硬编码技能名，而是绑定已安装 Skills 的稳定标识。
 
 ## 7. Milestone 0：文档重基线
 
