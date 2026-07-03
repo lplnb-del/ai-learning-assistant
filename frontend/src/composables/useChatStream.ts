@@ -1,30 +1,39 @@
-import { computed, readonly, ref, shallowRef } from 'vue'
+import { computed, readonly, ref, shallowRef, watch } from 'vue'
 import { streamChatCompletion, type ChatMessagePayload, type ThinkingDepth } from '../api/chat'
+import { useConversationStore } from '../stores/conversations'
+import { useModelSettingsStore } from '../stores/modelSettings'
+import type { ChatConversationState, ChatViewMessage } from '../types/conversations'
 
-export interface ChatViewMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  status?: string
+function createEmptyConversationState(): ChatConversationState {
+  return {
+    messages: [],
+    model: '',
+    thinkingDepth: '标准',
+    temperature: 0.7,
+    keepContext: true,
+    webSearch: true,
+  }
 }
 
-const initialMessages: ChatViewMessage[] = [
-  {
-    id: 'sample-user',
-    role: 'user',
-    content: '能不能帮我解释一下什么是 RAG？尽量通俗一点，最好结合生活中的例子。',
-  },
-  {
-    id: 'sample-assistant',
-    role: 'assistant',
-    status: '静态示例，可直接输入问题调用真实模型',
-    content:
-      'RAG（检索增强生成）是一种让 AI 回答前先翻资料的技术。普通 Chat 像闭卷考试，只能凭已有记忆作答；RAG 更像开卷考试，会先检索可信资料，再组织答案。',
-  },
-]
+function buildSessionTitle(messages: ChatViewMessage[]) {
+  const assistantSummary = messages.find((message) => message.role === 'assistant' && message.content.trim())
+  if (assistantSummary) {
+    return normalizeSessionLabel(assistantSummary.content, '新建 Chat 对话')
+  }
+
+  const firstUserMessage = messages.find((message) => message.role === 'user' && message.content.trim())
+  return firstUserMessage ? normalizeSessionLabel(firstUserMessage.content, '新建 Chat 对话') : '新建 Chat 对话'
+}
+
+function buildSessionPreview(messages: ChatViewMessage[]) {
+  const lastMessage = [...messages].reverse().find((message) => message.content.trim())
+  return lastMessage ? lastMessage.content.trim().slice(0, 40) : ''
+}
 
 export function useChatStream() {
-  const messages = ref<ChatViewMessage[]>([...initialMessages])
+  const conversationStore = useConversationStore()
+  const modelSettingsStore = useModelSettingsStore()
+  const messages = ref<ChatViewMessage[]>([])
   const input = shallowRef('')
   const errorMessage = shallowRef('')
   const isStreaming = shallowRef(false)
@@ -33,14 +42,79 @@ export function useChatStream() {
   const thinkingDepth = shallowRef<ThinkingDepth>('标准')
   const keepContext = shallowRef(true)
   const webSearch = shallowRef(true)
+  const activeSessionId = computed(() => conversationStore.activeIds.chat)
+  const availableModels = computed(() => modelSettingsStore.chatModelOptions)
 
   const canSubmit = computed(() => input.value.trim().length > 0 && !isStreaming.value)
   const lastAssistantStatus = computed(() => {
     if (isStreaming.value) {
-      return '正在连接 DeepSeek 流式输出...'
+      return '正在连接模型流式输出...'
     }
     return findLastAssistantStatus(messages.value)
   })
+
+  void modelSettingsStore.loadRemoteSettings()
+
+  function hydrateFromSession() {
+    const ensuredId = conversationStore.ensureSession('chat', {
+      mode: 'chat',
+      state: createEmptyConversationState(),
+    })
+    const session = conversationStore.getSession(ensuredId)
+    if (!session || session.payload.mode !== 'chat') {
+      return
+    }
+
+    messages.value = [...session.payload.state.messages]
+    model.value = session.payload.state.model || modelSettingsStore.defaultChatModel
+    thinkingDepth.value = session.payload.state.thinkingDepth
+    temperature.value = session.payload.state.temperature
+    keepContext.value = session.payload.state.keepContext
+    webSearch.value = session.payload.state.webSearch
+    input.value = ''
+    errorMessage.value = ''
+  }
+
+  watch(activeSessionId, hydrateFromSession, { immediate: true })
+
+  watch(
+    [messages, model, thinkingDepth, temperature, keepContext, webSearch],
+    () => {
+      const sessionId = activeSessionId.value
+      if (!sessionId) {
+        return
+      }
+      const currentSession = conversationStore.getSession(sessionId)
+
+      conversationStore.updateSession(sessionId, {
+        title: currentSession?.titleManuallyEdited ? undefined : buildSessionTitle(messages.value),
+        preview: buildSessionPreview(messages.value),
+        payload: {
+          mode: 'chat',
+          state: {
+            messages: [...messages.value],
+            model: model.value,
+            thinkingDepth: thinkingDepth.value,
+            temperature: temperature.value,
+            keepContext: keepContext.value,
+            webSearch: webSearch.value,
+          },
+        },
+      })
+    },
+    { deep: true },
+  )
+
+  watch(
+    () => modelSettingsStore.defaultChatModel,
+    (nextModel) => {
+      if (!nextModel || model.value || messages.value.length > 0) {
+        return
+      }
+      model.value = nextModel
+    },
+    { immediate: true },
+  )
 
   async function submit() {
     const question = input.value.trim()
@@ -115,6 +189,13 @@ export function useChatStream() {
     keepContext.value = !keepContext.value
   }
 
+  function startNewConversation() {
+    conversationStore.createSession('chat', {
+      mode: 'chat',
+      state: createEmptyConversationState(),
+    })
+  }
+
   return {
     messages: readonly(messages),
     input,
@@ -127,11 +208,22 @@ export function useChatStream() {
     webSearch,
     canSubmit,
     lastAssistantStatus,
+    availableModels,
     submit,
+    startNewConversation,
     setThinkingDepth,
     toggleWebSearch,
     toggleKeepContext,
   }
+}
+
+function normalizeSessionLabel(content: string, fallback: string) {
+  const normalized = content
+    .replace(/[#>*`_-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized ? normalized.slice(0, 24) : fallback
 }
 
 function buildPayloadMessages(messages: ChatViewMessage[]): ChatMessagePayload[] {

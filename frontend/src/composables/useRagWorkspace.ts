@@ -1,43 +1,37 @@
-import { computed, onMounted, readonly, ref, shallowRef } from 'vue'
+import { computed, onMounted, readonly, ref, shallowRef, watch } from 'vue'
 import { createQaCard, createQaLibrary, listQaLibraries, type QALibraryPayload } from '../api/cards'
 import { listKnowledgeBases, type KnowledgeBasePayload } from '../api/knowledge'
-import { askRagQuestion, type RagSourcePayload } from '../api/rag'
+import { askRagQuestion } from '../api/rag'
+import { useConversationStore } from '../stores/conversations'
+import type { RagConversationState, RagViewMessage } from '../types/conversations'
 
-export interface RagViewMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  status?: string
-  sources?: readonly RagSourcePayload[]
-  promptPreview?: string
-  question?: string
-  knowledgeBaseIds?: string[]
-  savedCardId?: string
+function createEmptyConversationState(): RagConversationState {
+  return {
+    messages: [],
+    selectedKnowledgeBaseIds: [],
+    selectedQaLibraryIds: [],
+    topK: 3,
+  }
 }
 
-const initialMessages: RagViewMessage[] = [
-  {
-    id: 'sample-user',
-    role: 'user',
-    content: '基于资料，RAG 是怎么回答问题的？',
-  },
-  {
-    id: 'sample-assistant',
-    role: 'assistant',
-    status: '本地 RAG 已就绪，可选择知识库和问答库后提问',
-    content:
-      'RAG 会先从知识库检索相关 chunks，也可以补充匹配问答库里的已有答案表达，再把问题和参考资料组装成 prompt。',
-  },
-]
+function buildSessionTitle(messages: RagViewMessage[]) {
+  const assistantSummary = messages.find((message) => message.role === 'assistant' && message.content.trim())
+  if (assistantSummary) {
+    return normalizeSessionLabel(assistantSummary.content, '新建 RAG 对话')
+  }
 
-const demoQuestions = [
-  'RAG 是怎么回答问题的？',
-  '根据资料总结 3 个适合面试的要点。',
-  '当前知识库里有哪些核心概念？',
-]
+  const firstUserMessage = messages.find((message) => message.role === 'user' && message.content.trim())
+  return firstUserMessage ? normalizeSessionLabel(firstUserMessage.content, '新建 RAG 对话') : '新建 RAG 对话'
+}
+
+function buildSessionPreview(messages: RagViewMessage[]) {
+  const lastMessage = [...messages].reverse().find((message) => message.content.trim())
+  return lastMessage ? lastMessage.content.trim().slice(0, 40) : ''
+}
 
 export function useRagWorkspace() {
-  const messages = ref<RagViewMessage[]>([...initialMessages])
+  const conversationStore = useConversationStore()
+  const messages = ref<RagViewMessage[]>([])
   const knowledgeBases = ref<KnowledgeBasePayload[]>([])
   const qaLibraries = ref<QALibraryPayload[]>([])
 
@@ -57,6 +51,7 @@ export function useRagWorkspace() {
   const saveCardNewLibraryName = shallowRef('')
   const saveCardNewLibraryDescription = shallowRef('')
   const isQaLibraryPickerOpen = shallowRef(false)
+  const activeSessionId = computed(() => conversationStore.activeIds.rag)
 
   const selectedKnowledgeBases = computed(() =>
     knowledgeBases.value.filter((base) => selectedKnowledgeBaseIds.value.includes(base.id)),
@@ -72,21 +67,81 @@ export function useRagWorkspace() {
     void initialize()
   })
 
+  function hydrateFromSession() {
+    const fallbackState = createEmptyConversationState()
+    if (!fallbackState.selectedKnowledgeBaseIds.length && knowledgeBases.value.length) {
+      fallbackState.selectedKnowledgeBaseIds = [knowledgeBases.value[0].id]
+    }
+
+    const ensuredId = conversationStore.ensureSession('rag', {
+      mode: 'rag',
+      state: fallbackState,
+    })
+    const session = conversationStore.getSession(ensuredId)
+    if (!session || session.payload.mode !== 'rag') {
+      return
+    }
+
+    messages.value = [...session.payload.state.messages]
+    selectedKnowledgeBaseIds.value = session.payload.state.selectedKnowledgeBaseIds.length
+      ? [...session.payload.state.selectedKnowledgeBaseIds]
+      : knowledgeBases.value[0]
+        ? [knowledgeBases.value[0].id]
+        : []
+    selectedQaLibraryIds.value = [...session.payload.state.selectedQaLibraryIds]
+    topK.value = session.payload.state.topK
+    input.value = ''
+    errorMessage.value = ''
+    cardMessage.value = ''
+    activeSaveMessageId.value = ''
+    isQaLibraryPickerOpen.value = false
+  }
+
   async function initialize() {
     isLoadingBases.value = true
     errorMessage.value = ''
     try {
       knowledgeBases.value = await listKnowledgeBases()
       qaLibraries.value = await listQaLibraries()
-      if (!selectedKnowledgeBaseIds.value.length && knowledgeBases.value.length) {
-        selectedKnowledgeBaseIds.value = [knowledgeBases.value[0].id]
-      }
+      hydrateFromSession()
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : '读取 RAG 资源失败'
     } finally {
       isLoadingBases.value = false
     }
   }
+
+  watch(activeSessionId, () => {
+    if (knowledgeBases.value.length || qaLibraries.value.length) {
+      hydrateFromSession()
+    }
+  })
+
+  watch(
+    [messages, selectedKnowledgeBaseIds, selectedQaLibraryIds, topK],
+    () => {
+      const sessionId = activeSessionId.value
+      if (!sessionId) {
+        return
+      }
+      const currentSession = conversationStore.getSession(sessionId)
+
+      conversationStore.updateSession(sessionId, {
+        title: currentSession?.titleManuallyEdited ? undefined : buildSessionTitle(messages.value),
+        preview: buildSessionPreview(messages.value),
+        payload: {
+          mode: 'rag',
+          state: {
+            messages: [...messages.value],
+            selectedKnowledgeBaseIds: [...selectedKnowledgeBaseIds.value],
+            selectedQaLibraryIds: [...selectedQaLibraryIds.value],
+            topK: topK.value,
+          },
+        },
+      })
+    },
+    { deep: true },
+  )
 
   async function submit() {
     const question = input.value.trim()
@@ -138,10 +193,6 @@ export function useRagWorkspace() {
     } finally {
       isAsking.value = false
     }
-  }
-
-  function useDemoQuestion(question: string) {
-    input.value = question
   }
 
   function toggleQaLibraryPicker() {
@@ -214,9 +265,19 @@ export function useRagWorkspace() {
     }
   }
 
+  function startNewConversation() {
+    const nextState = createEmptyConversationState()
+    if (knowledgeBases.value.length) {
+      nextState.selectedKnowledgeBaseIds = [knowledgeBases.value[0].id]
+    }
+    conversationStore.createSession('rag', {
+      mode: 'rag',
+      state: nextState,
+    })
+  }
+
   return {
     messages: readonly(messages),
-    demoQuestions,
     knowledgeBases: readonly(knowledgeBases),
     qaLibraries: readonly(qaLibraries),
     selectedKnowledgeBaseIds,
@@ -238,11 +299,20 @@ export function useRagWorkspace() {
     saveCardNewLibraryDescription,
     isQaLibraryPickerOpen,
     initialize,
-    useDemoQuestion,
+    startNewConversation,
     submit,
     toggleQaLibraryPicker,
     toggleQaLibrarySelection,
     openSavePanel,
     saveAsCard,
   }
+}
+
+function normalizeSessionLabel(content: string, fallback: string) {
+  const normalized = content
+    .replace(/[#>*`_-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized ? normalized.slice(0, 24) : fallback
 }

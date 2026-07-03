@@ -3,6 +3,7 @@ export interface SubAgentRolePayload {
   name: string
   title: string
   description: string
+  system_prompt?: string
   greeting: string
   preferred_skills: string[]
   tags: string[]
@@ -31,6 +32,21 @@ export interface SkillRunResultPayload {
   context_used: boolean
 }
 
+export interface AgentRespondPayload {
+  input_text: string
+  knowledge_base_id?: string | null
+  top_k?: number
+  role_id?: string | null
+}
+
+export interface AgentRespondResultPayload {
+  role_id: string
+  role_name: string
+  input_text: string
+  output: string
+  context_used: boolean
+}
+
 interface ApiErrorPayload {
   message?: string
 }
@@ -47,6 +63,14 @@ export async function listAgentCapabilities(): Promise<AgentCapabilityPayload[]>
 
 export async function runAgentSkill(skillId: string, payload: SkillRunPayload): Promise<SkillRunResultPayload> {
   return requestJson(`/api/agents/skills/${skillId}/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function runAgentConversation(payload: AgentRespondPayload): Promise<AgentRespondResultPayload> {
+  return requestJson('/api/agents/respond', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
